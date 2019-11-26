@@ -28,6 +28,7 @@
               "src/assets"
             ],
             "styles": [
+              "./node_modules/bootstrap/dist/css/bootstrap.min.css",
               "src/styles.sass"
             ],
             "scripts": []
@@ -67,7 +68,9 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "wolfman:build"
+            "browserTarget": "wolfman:build",
+            "proxyConfig": "proxy.conf.json",
+            "port": 3200
           },
           "configurations": {
             "production": {

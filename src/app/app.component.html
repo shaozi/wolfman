@@ -1,21 +1,53 @@
-<!--The content below is only a placeholder and can be replaced.-->
-<div style="text-align:center">
-  <h1>
-    Welcome to {{ title }}!
-  </h1>
-  <img width="300" alt="Angular Logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgMjUwIj4KICAgIDxwYXRoIGZpbGw9IiNERDAwMzEiIGQ9Ik0xMjUgMzBMMzEuOSA2My4ybDE0LjIgMTIzLjFMMTI1IDIzMGw3OC45LTQzLjcgMTQuMi0xMjMuMXoiIC8+CiAgICA8cGF0aCBmaWxsPSIjQzMwMDJGIiBkPSJNMTI1IDMwdjIyLjItLjFWMjMwbDc4LjktNDMuNyAxNC4yLTEyMy4xTDEyNSAzMHoiIC8+CiAgICA8cGF0aCAgZmlsbD0iI0ZGRkZGRiIgZD0iTTEyNSA1Mi4xTDY2LjggMTgyLjZoMjEuN2wxMS43LTI5LjJoNDkuNGwxMS43IDI5LjJIMTgzTDEyNSA1Mi4xem0xNyA4My4zaC0zNGwxNy00MC45IDE3IDQwLjl6IiAvPgogIDwvc3ZnPg==">
+<div class="container">
+  <div class="jumbotron">
+    <h1 class="display-4">狼人杀</h1>
+    <p class="lead">Wolfman Kill</p>
+  </div>
+
+  <div>
+    <div class="form-group">
+      <label for="name">Your Name: </label>
+      <input type="text" id="name" class="form-control" [(ngModel)]="sess.username">
+    </div>
+    <div class="form-group">
+      <label for="game">Game Name: </label>
+      <input id="gaem" class="form-control" [(ngModel)]="sess.gamename">
+    </div>
+    <div class="form-group">
+      <button class="btn btn-primary mr-2" (click)="joinGame()" [disabled]="!sess.username || !sess.gamename"> JOIN </button>
+      <button class="btn btn-success mr-2" (click)="newGame()" [disabled]="!sess.username || !sess.gamename"> New
+        Game</button>
+      <button class="btn btn-secondary mr-2" (click)="refreshGame()">Refresh</button>
+      <button class="btn btn-secondary" (click)="me()">About Me</button>
+    </div>
+    <div class="form-group">
+      <label for="chat">Chat: </label>
+      <div class="input-group">
+        <input id="chat" class="form-control" [(ngModel)]="chatMessage">
+        <div class="input-group-append">
+          <button class="btn btn-primary" [disabled]="chatMessage == ''" (click)="sendChat()">Send</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div *ngIf="game && game.users">
+    <h3>Users</h3>
+    <div *ngFor="let user of game.users">
+      <span class="badge">{{user.name}}</span> <span *ngIf="user.isOrganizer">(organizer)</span>
+    </div>
+  </div>
+
+  <div>
+    <h3>logs</h3>
+    <div *ngFor="let msg of messages">
+        <span class="badge" [ngClass]="{'badge-danger': msg.type=='error', 'badge-info': msg.type=='chat'}" > {{msg.type}} </span> 
+        
+        <span *ngIf="msg.type=='chat'" class="text-info"> {{msg.from}}:</span> 
+        
+        {{msg.message}}
+    </div>
+  </div>
 </div>
-<h2>Here are some links to help you start: </h2>
-<ul>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/tutorial">Tour of Heroes</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/cli">CLI Documentation</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://blog.angular.io/">Angular blog</a></h2>
-  </li>
-</ul>
 
 <router-outlet></router-outlet>
