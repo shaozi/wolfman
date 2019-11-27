@@ -1,5 +1,6 @@
 export interface WmClientRequest {
   user: string
+  socket: string
 }
 
 export interface WmJoinRequest extends WmClientRequest {

@@ -2,12 +2,21 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms'
 import { AppRoutingModule } from './app-routing.module';
-import { AppComponent } from './app.component';
+import { AppComponent } from './components/app.component';
 import { HttpClientModule } from '@angular/common/http';
+import { LoginComponent } from './components/login/login.component';
+import { CreateorjoinComponent } from './components/createorjoin/createorjoin.component';
+import { Routes, RouterModule } from '@angular/router';
+import { ManagepageComponent } from './components/managepage/managepage.component';
+
+
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    LoginComponent,
+    CreateorjoinComponent,
+    ManagepageComponent
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,9 @@
+<div class="center-container">
+  <div class="h-100 row align-items-center">
+      <div class="col">
+    <label>Your Name: </label>
+    <input class="form-control" [(ngModel)]="username">
+    <button class="btn btn-success btn-block mt-1" [disabled]="!username" (click)="next()" >Next</button>
+    </div>
+  </div>
+</div>

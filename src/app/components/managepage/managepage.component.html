@@ -1,0 +1,53 @@
+<div class="container">
+    <div class="jumbotron">
+      <h1 class="display-4">狼人杀</h1>
+      <p class="lead">Wolfman Kill</p>
+    </div>
+  
+    <div>
+        <div>Welcome {{sess.username}}</div>
+        <div>Game: {{sess.gamename}}</div>
+      
+      <div class="form-group"> 
+          <button class="btn btn-danger mr-2" (click)="leaveGame()"> Leave
+              Game</button>
+        <button class="btn btn-secondary mr-2" (click)="refreshGame()">Refresh</button>
+        <button class="btn btn-secondary" (click)="me()">About Me</button>
+
+        <button class="btn btn-secondary mr-2" (click)="toggleMusic()">Play/stop Music</button>
+        <button class="btn btn-secondary" (click)="me()">About Me</button>
+
+      </div>
+  
+    </div>
+    <div *ngIf="game && game.users">
+      <h3>Users</h3>
+      <span *ngFor="let user of game.users">
+        <span class="badge badge-info">{{user.name}}</span> <span *ngIf="user.isOrganizer">(organizer)</span>
+      </span>
+    </div>
+  <hr>
+    <div class="mb-3">
+      <div style="overflow: scroll; height: 100px;" #scrollMe [scrollTop]="scrollMe.scrollHeight">
+        <div *ngFor="let msg of messages">
+          <span class="badge" [ngClass]="{'badge-danger': msg.type=='error', 'badge-info': msg.type=='chat', 'badge-warning': msg.type=='warning'}">
+            {{msg.type}} </span>
+  
+          <span *ngIf="msg.type=='chat'" class="text-info"> {{msg.from}}:</span>
+  
+          {{msg.message}}
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="chat">Chat: </label>
+      <div class="input-group">
+        <input id="chat" class="form-control" [(ngModel)]="chatMessage" 
+        (keyup.enter)="chatOnEnter()"
+        >
+        <div class="input-group-append">
+          <button class="btn btn-primary" [disabled]="chatMessage == ''" (click)="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
