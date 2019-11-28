@@ -44,6 +44,9 @@ export class ManagepageComponent implements OnInit {
       this.refreshGame()
     })
     
+    this.socket.on('start', () => {
+      this.router.navigate(['/game'])
+    })
   }
 
   handleError(error: HttpErrorResponse) {
@@ -105,6 +108,13 @@ export class ManagepageComponent implements OnInit {
     )
   }
 
+  startGame() {
+    this.http.post('/api/start', {}).subscribe(res => {
+      this.router.navigate(['/game'])
+    },
+    error => this.handleError(error)
+    )
+  }
   
   sendChat() {
     if (this.chatMessage == '') {

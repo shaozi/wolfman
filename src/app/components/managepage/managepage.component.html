@@ -11,7 +11,7 @@
       <div class="form-group"> 
           <button class="btn btn-danger mr-2" (click)="leaveGame()"> Leave
               Game</button>
-        <button class="btn btn-secondary mr-2" (click)="refreshGame()">Refresh</button>
+        <button class="btn btn-success mr-2"  [disabled]="game && game.users.length < 2" (click)="startGame()">Start Game</button>
         <button class="btn btn-secondary" (click)="me()">About Me</button>
 
         <button class="btn btn-secondary mr-2" (click)="toggleMusic()">Play/stop Music</button>
