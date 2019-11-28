@@ -333,7 +333,14 @@ function login(req, res) {
   res.json({success: true})
 }
 
+function logout(req, res) {
+  delete req.session.user
+  delete req.session.game
+  res.json({success: true})
+}
+
 app.post('/api/login', login)
+app.post('/api/logout', logout)
 app.post('/api/join', joinGame)
 app.post('/api/leave', leaveGame)
 app.post('/api/create', createGame)

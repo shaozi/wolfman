@@ -21,6 +21,7 @@ export class LoginComponent implements OnInit {
   me() {
     this.http.get(`/api/me`)
       .subscribe((me: { username: string, gamename: string }) => {
+        this.username = me.username
         if (me.username && me.gamename) {
           this.router.navigate(['/manage'])
         }

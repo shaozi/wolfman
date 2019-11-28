@@ -108,6 +108,13 @@ export class ManagepageComponent implements OnInit {
     )
   }
 
+  logout() {
+    this.http.post('/api/logout', {}).subscribe(res => {
+      this.router.navigate(['/login'])
+    },
+    error => this.handleError(error)
+    )
+  }
   startGame() {
     this.http.post('/api/start', {}).subscribe(res => {
       this.router.navigate(['/game'])
