@@ -8,7 +8,7 @@ var assert = require('assert')
 
 
 var translates = {
-  roles: {villager: '平民', wolf: '狼人', witch: '女巫', fortuneTeller: '预言家', hunter: '猎人', guard: '守卫', idiot: '白痴'}
+  roles: { villager: '平民', wolf: '狼人', witch: '女巫', fortuneTeller: '预言家', hunter: '猎人', guard: '守卫', idiot: '白痴' }
 }
 
 var roles = ['villager', 'wolf', 'witch', 'fortuneTeller', 'hunter', 'guard', 'idiot']
@@ -86,15 +86,16 @@ function userJoinGame(username, gamename, socketId) {
   if (game.status != 0) {
     throw new Error(`Game ${gamename} cannot be joined because it is not open.`)
   }
-  if (game.users[username]) {
+  let user = game.users.find(u => { return u.name == username })
+  if (user) {
     throw new Error(`You are already in ${gamename}`)
   }
 
   let isOrganizer = false
-  if (Object.keys(game.users) == 0) {
+  if (game.users.length == 0) {
     isOrganizer = true
   }
-  game.users[username] = {
+  game.users.push({
     name: username,
     role: null,
     live: true,
@@ -109,7 +110,7 @@ function userJoinGame(username, gamename, socketId) {
     lastProtect: '',
     revealedIdot: false,
     isOrganizer: isOrganizer
-  }
+  })
 
   socket.join(game.name)
   socketGameUserMap[socket.id] = { game: game.name, user: username }
@@ -139,7 +140,7 @@ function shuffle(array) {
 }
 
 function assignRoles(game, roleCounts) {
-  let users = Object.values(game.users)
+  let users = game.users
   let roleArray = []
   Object.keys(roleCounts).forEach(role => {
     let count = roleCounts[role]
@@ -148,7 +149,7 @@ function assignRoles(game, roleCounts) {
     }
   })
   roleArray = shuffle(roleArray)
-  for(let i = 0; i< users.length; i++) {
+  for (let i = 0; i < users.length; i++) {
     users[i].role = roleArray[i]
     console.log(users[i].name, users[i].role)
   }
@@ -159,16 +160,16 @@ function getGameDetails(gamename) {
   return {
     name: game.name,
     status: game.status,
-    users: Object.values(game.users).map(u => {
-      return { 
-        name: u.name, 
+    users: game.users.map(u => {
+      return {
+        name: u.name,
         isOrganizer: u.isOrganizer,
         live: u.live,
         runSheriff: u.runSheriff,
         quitRunSheriff: u.quitRunSheriff,
         sheriff: u.sheriff,
         revealedIdot: u.revealedIdot
-       }
+      }
     })
   }
 }
@@ -183,9 +184,9 @@ function findGame(gamename) {
 
 function findUserInGame(username, gamename) {
   let game = findGame(gamename)
-  let user = game.users[username]
+  let user = game.users.find(u => { return u.name == username })
   if (!user) {
-    throw new Error(`You are already in ${gamename}`)
+    throw new Error(`${username} is not in ${gamename}`)
   }
   return user
 }
@@ -200,7 +201,7 @@ function saveUserGameToSession(req, user, game) {
 }
 
 function vote(req, res) {
-  
+
 }
 
 function joinGame(req, res) {
@@ -216,43 +217,45 @@ function joinGame(req, res) {
   }
 }
 
+function _leaveGame(req, socketId) {
+  var socket = findSocketById(socketId)
+  var username = req.session.user
+  var gamename = req.session.game
+  let game = findGame(gamename)
+  if (game.status != 0) {
+    throw new Error(`Game ${gamename} is in progress, you cannot leave.`)
+  }
+  let users = game.users
+  let user = users.find(u => { return u.name == username })
+  if (!user) {
+    throw new Error(`You are not in Game ${gamename}.`)
+  }
+  delete req.session.game
+  if (users.length == 1) {
+    delGame(game.name)
+    if (socket) delete socketGameUserMap[socket.id]
+    return
+  }
+  if (user.isOrganizer) {
+    var newOrganizer = users.find(u => { return !u.isOrganizer })
+    if (newOrganizer) {
+      newOrganizer.isOrganizer = true
+    }
+  }
+  let index = users.indexOf(user)
+  users.splice(index, 1)
+  if (socket) delete socketGameUserMap[socket.id]
+  io.to(game.name).emit('message', { type: 'warning', message: `${user.name} left.` })
+  if (user.isOrganizer && newOrganizer) {
+    io.to(game.name).emit('message', { type: 'info', message: `${newOrganizer.name} is promoted.` })
+  }
+  io.to(game.name).emit('refresh', null)
+}
+
 function leaveGame(req, res) {
   var info = req.body
   try {
-    var socket = findSocketById(info.socket)
-    var username = req.session.user
-    var gamename = req.session.game
-    if (!socket) {
-      throw new Error(`socket id is not connected.`)
-    }
-    let game = findGame(gamename)
-    if (game.status != 0) {
-      throw new Error(`Game ${gamename} is in progress, you cannot leave.`)
-    }
-    let users = game.users
-    let user = users[username]
-    if (!user) {
-      throw new Error(`You are not in Game ${gamename}.`)
-    }
-    delete req.session.game
-    if (Object.values(users).length == 1) {
-      delGame(game.name)
-      delete socketGameUserMap[socket.id]
-      return
-    }
-    if (user.isOrganizer) {
-      var newOrganizer = Object.values(users).find(u => { return !u.isOrganizer })
-      if (newOrganizer) {
-        newOrganizer.isOrganizer = true
-      }
-    }
-    delete users[username]
-    delete socketGameUserMap[socket.id]
-    io.to(game.name).emit('message', { type: 'warning', message: `${user.name} left.` })
-    if (user.isOrganizer && newOrganizer) {
-      io.to(game.name).emit('message', { type: 'info', message: `${newOrganizer.name} is promoted.` })
-    }
-    io.to(game.name).emit('refresh', null)
+    _leaveGame(req, info.socket)
     res.json({ success: true })
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -275,7 +278,7 @@ function createGame(req, res) {
     games[gamename] = {
       name: gamename,
       status: 0, // 0, 1, 2, 3, 4 ... odd: night, even: day. 0: waiting
-      users: {} // username => user
+      users: [] // username => user
     }
     userJoinGame(username, gamename, socket.id)
     saveUserGameToSession(req, username, gamename)
@@ -290,25 +293,25 @@ function startGame(req, res) {
   let info = req.body
   let game = findGame(req.session.game)
   if (game.status != 0) {
-    res.status(400).json({message: 'game already started'})
+    res.status(400).json({ message: 'game already started' })
     return
   }
   let counts = {
-    2: {wolf: 1, villager: 1},
-    3: {wolf: 1, villager: 2},
-    4: {wolf: 1, villager: 3},
-    5: {wolf: 1, villager: 4},
-    6: {wolf: 1, villager: 3, witch: 1, fortuneTeller: 1},
-    7: {wolf: 2, villager: 3, witch: 1, fortuneTeller: 1},
-    8: {wolf: 2, villager: 3, witch: 1, fortuneTeller: 1, idiot: 1},
-    9: {wolf: 3, villager: 3, witch: 1, fortuneTeller: 1, guard: 1},
-    10: {wolf: 3, villager: 3, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1},
-    11: {wolf: 4, villager: 3, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1},
-    12: {wolf: 4, villager: 4, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1}
+    2: { wolf: 1, villager: 1 },
+    3: { wolf: 1, villager: 2 },
+    4: { wolf: 1, villager: 3 },
+    5: { wolf: 1, villager: 4 },
+    6: { wolf: 1, villager: 3, witch: 1, fortuneTeller: 1 },
+    7: { wolf: 2, villager: 3, witch: 1, fortuneTeller: 1 },
+    8: { wolf: 2, villager: 3, witch: 1, fortuneTeller: 1, idiot: 1 },
+    9: { wolf: 3, villager: 3, witch: 1, fortuneTeller: 1, guard: 1 },
+    10: { wolf: 3, villager: 3, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1 },
+    11: { wolf: 4, villager: 3, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1 },
+    12: { wolf: 4, villager: 4, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1 }
   }
-  assignRoles(game, counts[Object.keys(game.users).length])
+  assignRoles(game, counts[game.users.length])
   io.to(game.name).emit('start')
-  res.json({success: true})
+  res.json({ success: true })
 }
 
 function chat(req, res) {
@@ -330,13 +333,41 @@ function chat(req, res) {
 function login(req, res) {
   var info = req.body
   saveUserGameToSession(req, info.user)
-  res.json({success: true})
+  res.json({ success: true })
 }
 
 function logout(req, res) {
-  delete req.session.user
-  delete req.session.game
-  res.json({success: true})
+  try {
+    let username = req.session.user
+    let sockets = []
+    Object.keys(socketGameUserMap).forEach(socketId => {
+      let { user, game } = socketGameUserMap[socketId]
+      if (user == username) {
+        sockets.push({ id: socketId, game: game })
+      }
+    })
+    sockets.forEach(socket => {
+      console.log(`${username} leave ${socket.game}`)
+      _leaveGame(req, socket.id)
+    })
+    delete req.session.user
+    delete req.session.game
+    res.json({ success: true })
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+}
+
+function getMyRole(req, res) {
+  try {
+    let username = req.session.user
+    let gamename = req.session.game
+    let game = findGame(gamename)
+    let user = game.users.find(u => { return u.name == username })
+    return res.json(user)
+  } catch (error) {
+    return res.status(400).json({ message: error.message })
+  }
 }
 
 app.post('/api/login', login)
@@ -347,6 +378,7 @@ app.post('/api/create', createGame)
 app.post('/api/chat', chat)
 app.post('/api/start', startGame)
 app.post('/api/vote', vote)
+app.get('/api/myrole', getMyRole)
 
 app.get('/api/game', function (req, res) {
   let gamename = req.session.game

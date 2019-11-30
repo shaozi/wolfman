@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import * as io from 'socket.io-client'
-import { WmJoinRequest, WmServerResponse, WmCreateRequest, WmServerMessage } from 'src/app/interfaces';
+import { WmJoinRequest, WmServerResponse, WmCreateRequest, WmServerMessage, WmGame, WmUser } from 'src/app/interfaces';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { SocketioService } from 'src/app/services/socketio.service';
 import { SoundService } from 'src/app/services/sound.service';
@@ -16,9 +16,8 @@ export class ManagepageComponent implements OnInit {
   title = 'wolfman';
   public messages = []
   public errorMessage = ''
-  public game
+  public game : WmGame
   public sess: { gamename: string, username: string } = { username: '', gamename: '' }
-  public userList = []
   public chatMessage = ''
   public inGame: boolean = false
 
@@ -65,8 +64,11 @@ export class ManagepageComponent implements OnInit {
 
   refreshGame() {
     this.http.get(`/api/game`)
-      .subscribe(game => {
+      .subscribe((game : WmGame) => {
         this.game = game
+        if (game.status > 0)  {
+          this.router.navigate(['/game'])
+        }
       },
         error => this.handleError(error)
       )
