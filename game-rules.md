@@ -67,7 +67,7 @@ There are two types of games players have to decide at the beginning on how the 
 10. Everyone vote to kill a player.
 11. Eliminated player has a chance to give a speech.
 
-### First day special order
+### First night and day special order
 
 1. The first night:
 
