@@ -8,10 +8,10 @@ var assert = require('assert')
 
 
 var translates = {
-  roles: { villager: '平民', wolf: '狼人', witch: '女巫', fortuneTeller: '预言家', hunter: '猎人', guard: '守卫', idiot: '白痴' }
+  roles: { villager: '平民', wolf: '狼人', witch: '女巫', prophet: '预言家', hunter: '猎人', guard: '守卫', idiot: '白痴' }
 }
 
-var roles = ['villager', 'wolf', 'witch', 'fortuneTeller', 'hunter', 'guard', 'idiot']
+var roles = ['villager', 'wolf', 'witch', 'prophet', 'hunter', 'guard', 'idiot']
 
 var games = {} // each game is a namespaces. a game has a users list
 var socketGameUserMap = {} // socket.id => {socket, game, user}
@@ -83,7 +83,7 @@ function userJoinGame(username, gamename, socketId) {
     throw new Error(`socket id is not connected.`)
   }
   let game = findGame(gamename)
-  if (game.status != 0) {
+  if (game.status != -1) {
     throw new Error(`Game ${gamename} cannot be joined because it is not open.`)
   }
   let user = game.users.find(u => { return u.name == username })
@@ -277,7 +277,12 @@ function createGame(req, res) {
     }
     games[gamename] = {
       name: gamename,
-      status: 0, // 0, 1, 2, 3, 4 ... odd: night, even: day. 0: waiting
+      status: -1, // 0, 1, 2, 3, 4 ... odd: night, even: day. -1: waiting. 0 vote for Sheriff
+      rule: '', // 屠边 屠城
+      voteFor: '', // waiting for what to be voted. sheriff, night kill, day kill, 
+      voteRound: 0, 
+      lastAttacked: '', // last person attacked by wolf
+      nightSubStep: 0, // 0: guard, 1 wolf, 2 witch, 3 prophet, 4 hunter, 5 idiot
       users: [] // username => user
     }
     userJoinGame(username, gamename, socket.id)
@@ -292,7 +297,7 @@ function createGame(req, res) {
 function startGame(req, res) {
   let info = req.body
   let game = findGame(req.session.game)
-  if (game.status != 0) {
+  if (game.status != -1) {
     res.status(400).json({ message: 'game already started' })
     return
   }
@@ -301,15 +306,18 @@ function startGame(req, res) {
     3: { wolf: 1, villager: 2 },
     4: { wolf: 1, villager: 3 },
     5: { wolf: 1, villager: 4 },
-    6: { wolf: 1, villager: 3, witch: 1, fortuneTeller: 1 },
-    7: { wolf: 2, villager: 3, witch: 1, fortuneTeller: 1 },
-    8: { wolf: 2, villager: 3, witch: 1, fortuneTeller: 1, idiot: 1 },
-    9: { wolf: 3, villager: 3, witch: 1, fortuneTeller: 1, guard: 1 },
-    10: { wolf: 3, villager: 3, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1 },
-    11: { wolf: 4, villager: 3, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1 },
-    12: { wolf: 4, villager: 4, idiot: 1, witch: 1, fortuneTeller: 1, guard: 1 }
+    6: { wolf: 2, villager: 2, witch: 1, prophet: 1 },
+    7: { wolf: 2, villager: 2, witch: 1, prophet: 1, hunter: 1 },
+    8: { wolf: 2, villager: 3, witch: 1, prophet: 1, hunter: 1 },
+    9: { wolf: 3, villager: 3, witch: 1, prophet: 1, hunter: 1 },
+    10: { wolf: 3, villager: 3, idiot: 1, witch: 1, prophet: 1, hunter: 1 },
+    11: { wolf: 4, villager: 3, idiot: 1, witch: 1, prophet: 1, hunter: 1 },
+    12: { wolf: 4, villager: 4, idiot: 1, witch: 1, prophet: 1, hunter: 1 }
   }
   assignRoles(game, counts[game.users.length])
+  game.status = 0 // vote for sheriff
+  game.voteFor = 'sheriff'
+  game.voteRound = 1
   io.to(game.name).emit('start')
   res.json({ success: true })
 }

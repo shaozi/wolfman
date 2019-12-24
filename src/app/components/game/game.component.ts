@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, TemplateRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SocketioService } from 'src/app/services/socketio.service';
 import { WmGame, WmUser } from 'src/app/interfaces';
 import { Router } from '@angular/router';
+import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 
 @Component({
   selector: 'app-game',
@@ -12,11 +13,14 @@ import { Router } from '@angular/router';
 export class GameComponent implements OnInit {
   public game: WmGame
   public user: WmUser
-
-  constructor(private http: HttpClient, private sio: SocketioService, private router: Router) { }
+  public modalRef: BsModalRef
+  
+  constructor(private http: HttpClient, private sio: SocketioService, private router: Router,
+    private modalService: BsModalService) { }
 
   ngOnInit() {
     this.getGame()
+    this.getMyRole()
   }
 
   handleError(error) {
@@ -27,8 +31,8 @@ export class GameComponent implements OnInit {
     this.http.get(`/api/game`)
       .subscribe((game : WmGame) => {
         this.game = game
-        if (game.status > 0)  {
-          this.router.navigate(['/game'])
+        if (game.status == -1) {
+          this.router.navigate(['/manage'])
         }
       },
         error => this.handleError(error)
@@ -39,8 +43,27 @@ export class GameComponent implements OnInit {
     this.http.get(`/api/myrole`)
       .subscribe((user: WmUser) => {
         this.user = user
+        this.openModal(this.userRole)
       },
         error => this.handleError(error)
       )
+  }
+
+  revealRole() {
+    //window.alert(`You are a ${this.user.role}`)
+    this.openModal(this.userRole)
+  }
+
+  roleAck() {
+    this.openModal(this.runSheriffOrNot)
+  }
+  confirmRunSheriff() {
+    console.log('confirmRun')
+  }
+  declineRunSheriff() {
+    console.log('declineRunSheriff')
+  }
+  openModal(template: TemplateRef<any>) {
+    this.modalRef = this.modalService.show(template, {class: 'modal-sm'});
   }
 }
