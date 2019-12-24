@@ -9,6 +9,7 @@ import { CreateorjoinComponent } from './components/createorjoin/createorjoin.co
 import { Routes, RouterModule } from '@angular/router';
 import { ManagepageComponent } from './components/managepage/managepage.component';
 import { GameComponent } from './components/game/game.component';
+import { ModalModule } from 'ngx-bootstrap/modal';
 
 
 
@@ -24,7 +25,8 @@ import { GameComponent } from './components/game/game.component';
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    ModalModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]

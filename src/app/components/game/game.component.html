@@ -1,1 +1,36 @@
-<p>game works!</p>
+<div class="container">
+
+  <ng-template #runSheriffOrNot>
+    <div class="modal-body text-center">
+      <p>Do you want to run Sheriff?</p>
+      <button type="button" class="btn btn-default" (click)="confirmRunSheriff()">Yes</button>
+      <button type="button" class="btn btn-default" (click)="declineRunSheriff()">No</button>
+    </div>
+  </ng-template>
+
+  <ng-template #userRole>
+    <div class="modal-body text-center">
+      <p>You are {{user.role}}</p>
+      <button type="button" class="btn btn-default" (click)="roleAck()">OK</button>
+    </div>
+  </ng-template>
+
+
+  <div *ngIf="game">
+    <div>
+      <span *ngIf="game.status % 2 == 0">Day {{game.status / 2}}</span>
+      <span *ngIf="game.status % 2 == 1">Night {{(game.status - 1) / 2}}</span>
+    </div>
+
+    <div *ngIf="user && user.role">
+      <button class="btn btn-info" (click)="openModal(userRole)">My Role and Status</button>
+    </div>
+
+    <div class="row row-cols-2">
+      <div class="col card" *ngFor="let user of game.users">
+        {{user.name}}
+      </div>
+    </div>
+  </div>
+
+</div>
