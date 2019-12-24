@@ -6,6 +6,7 @@ var bodyParser = require('body-parser')
 var sharedsession = require("express-socket.io-session");
 var assert = require('assert')
 
+var { games, socketGameUserMap } = require('./game-global')
 
 var translates = {
   roles: { villager: '平民', wolf: '狼人', witch: '女巫', prophet: '预言家', hunter: '猎人', guard: '守卫', idiot: '白痴' }
@@ -13,8 +14,8 @@ var translates = {
 
 var roles = ['villager', 'wolf', 'witch', 'prophet', 'hunter', 'guard', 'idiot']
 
-var games = {} // each game is a namespaces. a game has a users list
-var socketGameUserMap = {} // socket.id => {socket, game, user}
+// var games = {} // each game is a namespaces. a game has a users list
+// var socketGameUserMap = {} // socket.id => {socket, game, user}
 
 var sess = {
   secret: 'wolf man game super weak secret session',
@@ -280,7 +281,7 @@ function createGame(req, res) {
       status: -1, // 0, 1, 2, 3, 4 ... odd: night, even: day. -1: waiting. 0 vote for Sheriff
       rule: '', // 屠边 屠城
       voteFor: '', // waiting for what to be voted. sheriff, night kill, day kill, 
-      voteRound: 0, 
+      voteRound: 0,
       lastAttacked: '', // last person attacked by wolf
       nightSubStep: 0, // 0: guard, 1 wolf, 2 witch, 3 prophet, 4 hunter, 5 idiot
       users: [] // username => user
