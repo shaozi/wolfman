@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import * as io from 'socket.io-client'
 import { WmJoinRequest, WmServerResponse, WmCreateRequest, WmServerMessage, WmGame, WmUser } from 'src/app/interfaces';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { SocketioService } from 'src/app/services/socketio.service';
 import { SoundService } from 'src/app/services/sound.service';
 import { Router } from '@angular/router';
+import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 
 @Component({
   selector: 'app-managepage',
@@ -20,12 +21,16 @@ export class ManagepageComponent implements OnInit {
   public sess: { gamename: string, username: string } = { username: '', gamename: '' }
   public chatMessage = ''
   public inGame: boolean = false
+  public modalRef: BsModalRef
+
+  @ViewChild('aboutMe', {static: true}) aboutMe
 
   private socket
 
   constructor(private http: HttpClient, private sio: SocketioService, 
     //private sound: SoundService,
-    private router: Router) {
+    private router: Router,
+    private modalService: BsModalService) {
   }
 
   ngOnInit() {
@@ -91,12 +96,21 @@ export class ManagepageComponent implements OnInit {
           this.inGame = true
           this.refreshGame()
         }
+        this.modalRef = this.modalService.show(this.aboutMe, { class: 'modal-sm' });
       },
       error => this.handleError(error)
       )
       
   }
 
+  clickOk() {
+    console.log('OK is clicked')
+    this.modalRef.hide()
+  }
+  clickCancel() {
+    console.log('Cancel is clicked')
+    this.modalRef.hide()
+  }
   
 
   leaveGame() {

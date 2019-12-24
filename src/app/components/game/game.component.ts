@@ -1,4 +1,4 @@
-import { Component, OnInit, TemplateRef } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SocketioService } from 'src/app/services/socketio.service';
 import { WmGame, WmUser } from 'src/app/interfaces';
@@ -14,7 +14,10 @@ export class GameComponent implements OnInit {
   public game: WmGame
   public user: WmUser
   public modalRef: BsModalRef
-  
+
+  @ViewChild('userRole', { static: true }) userRole
+  @ViewChild('runSheriffOrNot', { static: true }) runSheriffOrNot
+
   constructor(private http: HttpClient, private sio: SocketioService, private router: Router,
     private modalService: BsModalService) { }
 
@@ -29,7 +32,7 @@ export class GameComponent implements OnInit {
 
   getGame() {
     this.http.get(`/api/game`)
-      .subscribe((game : WmGame) => {
+      .subscribe((game: WmGame) => {
         this.game = game
         if (game.status == -1) {
           this.router.navigate(['/manage'])
@@ -54,16 +57,15 @@ export class GameComponent implements OnInit {
     this.openModal(this.userRole)
   }
 
-  roleAck() {
-    this.openModal(this.runSheriffOrNot)
-  }
   confirmRunSheriff() {
     console.log('confirmRun')
+    this.modalRef.hide()
   }
   declineRunSheriff() {
     console.log('declineRunSheriff')
+    this.modalRef.hide()
   }
   openModal(template: TemplateRef<any>) {
-    this.modalRef = this.modalService.show(template, {class: 'modal-sm'});
+    this.modalRef = this.modalService.show(template, { class: 'modal-sm' });
   }
 }
