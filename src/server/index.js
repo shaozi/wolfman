@@ -394,9 +394,42 @@ function playGame(game) {
   }
 }
 
+/**
+ * Sets vote and checks validity
+ */
 function vote(req, res) {
   var game = findGame(req.session.game)
   var vote = req.body.vote
+  var user = findUserInGame(req.session.user)
+
+  // Check Validity based on round
+  switch(game.roundState.state) {
+    case "guard":
+      if(user.lastProtect === vote) {
+        res.json({ success: false, message: "Protected last round"})
+        return
+      }
+      break
+    case "witch":
+      switch(game.roundState.part) {
+        case 1: // Save
+          if(lastAttacked === user.name && game.round !== 1) {
+            res.json({ success: false, message: "Can't save self"})
+            return
+          }
+          break
+        case 2: // Kill
+          if(vote == user.name) {
+            res.json({ success: false, message: "Can't poison self"})
+            return
+          }
+      }
+  }
+  if(!findUserInGame(vote).alive) {
+    res.json({ success: false, message: "Vote Not Alive"})
+    return
+  }
+
   if(!(vote in game.votes)) game.votes[vote] = 0;
   game.votes[vote]++;
   res.json({ success: true })
