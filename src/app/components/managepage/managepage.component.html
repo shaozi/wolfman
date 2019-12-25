@@ -52,21 +52,30 @@
       <div class="form-group">
         <label>游戏类型：</label>
         <div class="btn-group" btnRadioGroup formControlName="gameType">
-          <label btnRadio="killAll" class="btn btn-primary"
-                 tabindex="0" role="button">屠城</label>
-          <label btnRadio="killSide" class="btn btn-primary"
-                 tabindex="0" role="button">屠边</label>
+          <label btnRadio="killAll" class="btn btn-primary" tabindex="0" role="button">屠城</label>
+          <label btnRadio="killSide" class="btn btn-primary" tabindex="0" role="button">屠边</label>
         </div>
       </div>
-
+      <div class="form-group">
+        <label>狼人数：</label>
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <button class="btn btn-secondary" type="button" (click)="decreaseWolfCount()">-</button>
+          </div>
+          <input type="text" class="form-control" readonly formControlName="wolfCount">
+          <div class="input-group-append">
+            <button class="btn btn-secondary" type="button" (click)="increaseWolfCount()">+</button>
+          </div>
+        </div>
+      </div>
       <div class="form-group">
         <label>神民：</label>
         <label class="btn btn-primary" [class.active]="optForm.value.witch" formControlName="witch" btnCheckbox
           tabindex="0" role="button">女巫</label>
-        <label class="btn btn-primary" [class.active]="optForm.value.prophet" formControlName="prophet"
-          btnCheckbox tabindex="0" role="button">预言家</label>
-        <label class="btn btn-primary" [class.active]="optForm.value.hunter" formControlName="hunter"
-          btnCheckbox tabindex="0" role="button">猎人</label>
+        <label class="btn btn-primary" [class.active]="optForm.value.prophet" formControlName="prophet" btnCheckbox
+          tabindex="0" role="button">预言家</label>
+        <label class="btn btn-primary" [class.active]="optForm.value.hunter" formControlName="hunter" btnCheckbox
+          tabindex="0" role="button">猎人</label>
         <label class="btn btn-primary" [class.active]="optForm.value.guard" formControlName="guard" btnCheckbox
           tabindex="0" role="button">守卫</label>
         <label class="btn btn-primary" [class.active]="optForm.value.idiot" formControlName="idiot" btnCheckbox
