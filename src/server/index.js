@@ -69,6 +69,10 @@ function delGame(gamename) {
 
 function findSocketById(socketId) {
   assert(typeof socketId == 'string')
+  if (socketId === 'test') {
+    let keys = Object.keys(io.sockets.sockets)
+    return io.sockets.sockets[keys[0]]
+  }
   return io.sockets.sockets[socketId]
 }
 
@@ -253,7 +257,7 @@ function createGame(req, res) {
 }
 
 function startGame(req, res) {
-  let info = req.body
+  let gameOptions = req.body
   let game = findGame(req.session.game)
   if (game.round != 0) {
     res.status(400).json({ message: 'game already started' })
