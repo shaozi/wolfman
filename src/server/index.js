@@ -316,11 +316,11 @@ function shuffle(array) {
 function getUsers(users, state) {
   var out = []
   users.forEach((user) => {
-    if(!user.alive) continue // Dead don't participate in anything
-    if(role === "nightStart" || role === "dayStart" || role === "killVote") out.push(user) // Everyone participates in these events
+    if(!user.alive) return // Dead don't participate in anything
+    if(state === "nightStart" || state === "dayStart" || state === "killVote") out.push(user.name) // Everyone participates in these events
     else if(user.role === state) { // Role Specific events
-      out.push(user)
-      break
+      out.push(user.name)
+      return
     }
   })
   return out
@@ -438,7 +438,7 @@ function vote(req, res) {
  */
 function ready(req, res) {
   var game = findGame(req.session.game)
-  game.waiting.splice(game.indexOf(req.session.user), 1)
+  game.waiting.splice(game.waiting.indexOf(req.session.user), 1)
   res.json({ success: true })
   if(game.waiting.length == 0) playGame(game)
 }
