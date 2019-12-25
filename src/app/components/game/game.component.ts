@@ -1,9 +1,10 @@
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SocketioService } from 'src/app/services/socketio.service';
-import { WmGame, WmUser } from 'src/app/interfaces';
+import { WmGame, WmUser, WmClientReponse, WmServerResponse } from 'src/app/interfaces';
 import { Router } from '@angular/router';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+import { SoundService } from 'src/app/services/sound.service';
 
 @Component({
   selector: 'app-game',
@@ -14,19 +15,31 @@ export class GameComponent implements OnInit {
   public game: WmGame
   public user: WmUser
   public modalRef: BsModalRef
-
+  public readySent = false
   private socket
   
   @ViewChild('userRole', { static: true }) userRole
   @ViewChild('runSheriffOrNot', { static: true }) runSheriffOrNot
 
   constructor(private http: HttpClient, private sio: SocketioService, private router: Router,
-    private modalService: BsModalService) { }
+    private modalService: BsModalService,
+    private soundService: SoundService) { }
 
   ngOnInit() {
     this.getGame()
     this.getMyRole()
     this.socket = this.sio.socket
+    this.socket.on('gameState', async info => {
+      switch(info.type) {
+        case 'nightStart':
+          this.soundService.playSequence(['isNight', 'everyone', 'closeEyes'])
+          break
+        case 'guard':
+          await this.soundService.playSequence(['guard', 'openEyes'])
+          await this.soundService.playSequence(['guard', 'choose'])
+          break
+      }
+    })
   }
 
   handleError(error) {
@@ -58,6 +71,20 @@ export class GameComponent implements OnInit {
   revealRole() {
     //window.alert(`You are a ${this.user.role}`)
     this.openModal(this.userRole)
+  }
+
+  roleCheckReady() {
+    if (this.readySent) return
+    this.http.post('/api/ready', {})
+    .subscribe((result: WmServerResponse)=>{
+      this.readySent = true
+      if (!result.success) {
+        console.log(result)
+      }
+    },
+    error => {
+      window.alert(error.message)
+    })
   }
 
   confirmRunSheriff() {
