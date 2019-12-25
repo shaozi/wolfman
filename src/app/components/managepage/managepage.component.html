@@ -30,9 +30,10 @@
         Game</button>
       <button class="btn btn-success mr-2" [disabled]="game && game.users.length < 2" (click)="startGame()">Start
         Game</button>
-      <button type="button" class="btn btn-secondary" (click)="me()">About Me</button>
+      <button type="button" class="btn btn-secondary mr-2" (click)="showMyRole()">About Me</button>
 
-      <button class="btn btn-secondary mr-2" (click)="toggleMusic()">Play/stop Music</button>
+      <button class="btn btn-secondary mr-2" (click)="voice1()">V1</button>
+      <button class="btn btn-secondary mr-2" (click)="voice2()">V2</button>
       <button class="btn btn-secondary" (click)="logout()">Log out</button>
     </div>
 
