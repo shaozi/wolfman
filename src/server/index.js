@@ -1,21 +1,15 @@
 var app = require('express')();
 var http = require('http').createServer(app);
-var io = require('socket.io')(http);
 var session = require('express-session')
+var io = require('socket.io')(http);
+
 var bodyParser = require('body-parser')
 var sharedsession = require("express-socket.io-session");
 var assert = require('assert')
 
-var { games, socketGameUserMap } = require('./game-global')
+var games = {} // each game is a namespaces. a game has a users list
+var socketGameUserMap = {} // socket.id => {socket, game, user}
 
-var translates = {
-  roles: { villager: '平民', wolf: '狼人', witch: '女巫', prophet: '预言家', hunter: '猎人', guard: '守卫', idiot: '白痴' }
-}
-
-var roles = ['villager', 'wolf', 'witch', 'prophet', 'hunter', 'guard', 'idiot']
-
-// var games = {} // each game is a namespaces. a game has a users list
-// var socketGameUserMap = {} // socket.id => {socket, game, user}
 
 var sess = {
   secret: 'wolf man game super weak secret session',
@@ -99,18 +93,16 @@ function userJoinGame(username, gamename, socketId) {
   game.users.push({
     name: username,
     role: null,
-    live: true,
-    poison: 0,
-    antidote: 0,
-    vote: '',
-    runSheriff: false,
-    quitRunSheriff: false,
+    alive: true,
+    poison: false,
+    antidote: false,
+    sheriffVoteStatus: null,
     sheriff: false,
-    canShoot: true, // for hunter
-    protect: '',
+    canShoot: false, // for hunter
+    protected: false,
     lastProtect: '',
-    revealedIdot: false,
-    isOrganizer: isOrganizer
+    revealedIdiot: false,
+    isOrganizer: isOrganizer,
   })
 
   socket.join(game.name)
@@ -165,13 +157,14 @@ function getGameDetails(gamename) {
       return {
         name: u.name,
         isOrganizer: u.isOrganizer,
-        live: u.live,
-        runSheriff: u.runSheriff,
-        quitRunSheriff: u.quitRunSheriff,
+        alive: u.alive,
+        sheriffVoteStatus: u.sheriffVoteStatus,
         sheriff: u.sheriff,
-        revealedIdot: u.revealedIdot
+        revealedIdiot: u.revealedIdiot
       }
-    })
+    }),
+    round: game.round,
+    roundState: game.roundState
   }
 }
 
@@ -278,13 +271,16 @@ function createGame(req, res) {
     }
     games[gamename] = {
       name: gamename,
-      status: -1, // 0, 1, 2, 3, 4 ... odd: night, even: day. -1: waiting. 0 vote for Sheriff
       rule: '', // 屠边 屠城
-      voteFor: '', // waiting for what to be voted. sheriff, night kill, day kill, 
-      voteRound: 0,
+      round: 1,
+      roundState: {
+        state: 'nightStart',
+        part: 0
+      }, // waiting for what to be voted. sheriff, night kill, day kill,
       lastAttacked: '', // last person attacked by wolf
-      nightSubStep: 0, // 0: guard, 1 wolf, 2 witch, 3 prophet, 4 hunter, 5 idiot
-      users: [] // username => user
+      users: [], // username => user
+      waiting: [], // users waiting for action
+      votes: {} // username: votes
     }
     userJoinGame(username, gamename, socket.id)
     saveUserGameToSession(req, username, gamename)
@@ -320,7 +316,150 @@ function startGame(req, res) {
   game.voteFor = 'sheriff'
   game.voteRound = 1
   io.to(game.name).emit('start')
+  if(assignRoles(game, req.body) === 0) res.json({ success: true })
+  else res.json({ success: false, message: "Bad Role Settings" })
+  playGame(game)
+}
+
+function assignRoles(game, data) {
+  let users = game.users
+  let roleArray = []
+  for(let _ = 0; _ < data.wolfCount; _++) {
+    roleArray.push("wolf")
+  }
+  if(data.witch) roleArray.push("witch")
+  if(data.prophet) roleArray.push("prophet")
+  if(data.hunter) roleArray.push("hunter")
+  if(data.guard) roleArray.push("guard")
+  if(data.idiot) roleArray.push("idiot")
+  if(roleArray.length > users.length) {
+    return 1
+  }
+  while(roleArray.length < users.length) {
+    roleArray.push("villager")
+  }
+  shuffle(roleArray)
+  for(let i = 0; i < users.length; i++) {
+    users[i].role = roleArray[i]
+  }
+  return 0
+}
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+function getUsers(users, role) {
+  var out = []
+  users.forEach((user) => {
+    if(role === "all") out.push(user)
+    else if(user.role === role) {
+      out.push(user)
+      break
+    }
+  })
+  return out
+}
+
+function playGame(game) {
+  // Waiting list should be empty when this starts
+  switch(game.roundState.state) {
+    case 'nightStart': // Announce night, everyone close eyes
+      game.waiting = getUsers(game.users, "all")
+      game.roundState.state = 'guard'
+      io.to(game.gamename).emit("gameState", { type: "nightStart"})
+      break;
+    case 'guard': // Guard open eyes, guard a player, close eyes
+      game.waiting = getUsers(game.users, "guard")
+      game.roundState.state = 'wolves'
+      if(game.waiting.length === 0) {
+        playGame(game) // Skip to next stage
+      } else {
+        io.to(game.gamename).emit("gameState", { type: "guard"})
+      }
+      break;
+    case 'wolves': // All wolves open eyes, vote kill a player, close eyes
+      game.waiting = getUsers(game.users, "wolf")
+      game.roundState.state = 'witch'
+      if(game.waiting.length === 0) {
+        playGame(game) // Skip to next stage
+      } else {
+        io.to(game.gamename).emit("gameState", { type: "guard"})
+      }
+      break;
+    case 'witch': // Witch open eyes, save/kill/do nothing, close eyes
+      game.waiting = getUsers(game.users, "witch")
+      if(game.waiting.length === 0) {
+        game.roundState.state = 'prophet'
+        playGame(game) // Skip to next stage
+      } else {
+        switch(game.roundState.part) {
+          case 1:
+            io.to(game.gamename).emit("gameState", { type: "guard"})
+        }
+      }
+      break;
+    case 'prophet': // Prophet open eyes, check a player, close eyes
+      game.waiting = getUsers(game.users, "prophet")
+      game.roundState.state = 'hunter'
+      if(game.waiting.length === 0) {
+        playGame(game) // Skip to next stage
+      } else {
+        io.to(game.gamename).emit("gameState", { type: "guard"})
+      }
+      break;
+    case 'hunter': // Hunter open eyes, kill/do nothing, close eyes
+      game.waiting = getUsers(game.users, "hunter")
+      game.roundState.state = 'dayStart'
+      if(game.waiting.length === 0) {
+        playGame(game) // Skip to next stage
+      } else {
+        io.to(game.gamename).emit("gameState", { type: "guard"})
+      }
+      break;
+    case 'dayStart': // Annouce day, everyone open eyes
+      break;
+    case 'deathList': // Everyone see who died last night
+      break;
+    case 'speech': // Each player in turn give a speech
+      break;
+    case 'killVote': // Everyone vote to kill a player.
+      break;
+    case 'lastWords': // Eliminated player has a chance to give a speech.
+      break;
+  }
+}
+
+function vote(req, res) {
+  var game = findGame(req.session.game)
+  var vote = req.body.vote
+  if(!(vote in game.votes)) game.votes[vote] = 0;
+  game.votes[vote]++;
   res.json({ success: true })
+}
+
+/** Removes user from waiting list and runs next section if waiting for nobody
+ */
+function ready(req, res) {
+  var game = findGame(req.session.game)
+  game.waiting.splice(game.indexOf(req.session.user), 1)
+  res.json({ success: true })
+  if(game.waiting.length == 0) playGame(game)
 }
 
 function chat(req, res) {
@@ -388,6 +527,7 @@ app.post('/api/chat', chat)
 app.post('/api/start', startGame)
 app.post('/api/vote', vote)
 app.get('/api/myrole', getMyRole)
+app.post('/api/ready', ready)
 
 app.get('/api/game', function (req, res) {
   let gamename = req.session.game
