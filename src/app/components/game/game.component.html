@@ -17,18 +17,20 @@
 
 
   <div *ngIf="game">
-    <div>
-      <span *ngIf="game.status % 2 == 0">Day {{game.status / 2}}</span>
-      <span *ngIf="game.status % 2 == 1">Night {{(game.status - 1) / 2}}</span>
+    <div class="text-center">
+      <span *ngIf="game.status % 2 == 1">Day {{game.status / 2}}</span>
+      <span *ngIf="game.status % 2 == 0">Night {{(game.status - 1) / 2}}</span>
     </div>
 
-    <div *ngIf="user && user.role">
+    <div *ngIf="user">
       <button class="btn btn-info" (click)="openModal(userRole)">My Role and Status</button>
     </div>
 
-    <div class="row row-cols-2">
-      <div class="col card" *ngFor="let user of game.users">
-        {{user.name}}
+    <div class="row p-3">
+      <div class="col-6 card shadow" *ngFor="let user of game.users">
+        <div class="card-body">
+          {{user.name}}
+        </div>
       </div>
     </div>
   </div>

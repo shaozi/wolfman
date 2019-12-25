@@ -134,20 +134,6 @@ export class ManagepageComponent implements OnInit {
     this.modalRef.hide()
   }
   
-  increaseWolfCount() {
-    let ctrl = this.optForm.get('wolfCount')
-    let count = ctrl.value + 1
-    if (count > 4) count = 4
-    ctrl.setValue(count)
-  }
-
-  decreaseWolfCount() {
-    let ctrl = this.optForm.get('wolfCount')
-    let count = ctrl.value - 1
-    if (count < 1) count = 1
-    ctrl.setValue(count)
-  }
-
   leaveGame() {
     let leaveRequest = {
       socket: this.socket.id
