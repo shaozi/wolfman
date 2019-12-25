@@ -78,7 +78,7 @@ function userJoinGame(username, gamename, socketId) {
     throw new Error(`socket id is not connected.`)
   }
   let game = findGame(gamename)
-  if (game.status != -1) {
+  if (game.round != 0) {
     throw new Error(`Game ${gamename} cannot be joined because it is not open.`)
   }
   let user = game.users.find(u => { return u.name == username })
@@ -111,41 +111,6 @@ function userJoinGame(username, gamename, socketId) {
   console.log(message)
   io.to(game.name).emit('message', { type: 'info', message: message })
   io.to(game.name).emit('refresh', null)
-}
-
-function shuffle(array) {
-  var currentIndex = array.length, temporaryValue, randomIndex;
-
-  // While there remain elements to shuffle...
-  while (0 !== currentIndex) {
-
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1;
-
-    // And swap it with the current element.
-    temporaryValue = array[currentIndex];
-    array[currentIndex] = array[randomIndex];
-    array[randomIndex] = temporaryValue;
-  }
-
-  return array;
-}
-
-function assignRoles(game, roleCounts) {
-  let users = game.users
-  let roleArray = []
-  Object.keys(roleCounts).forEach(role => {
-    let count = roleCounts[role]
-    for (let i = 0; i < count; i++) {
-      roleArray.push(role)
-    }
-  })
-  roleArray = shuffle(roleArray)
-  for (let i = 0; i < users.length; i++) {
-    users[i].role = roleArray[i]
-    console.log(users[i].name, users[i].role)
-  }
 }
 
 function getGameDetails(gamename) {
@@ -194,10 +159,6 @@ function saveUserGameToSession(req, user, game) {
   }
 }
 
-function vote(req, res) {
-
-}
-
 function joinGame(req, res) {
   var info = req.body
   try {
@@ -216,7 +177,7 @@ function _leaveGame(req, socketId) {
   var username = req.session.user
   var gamename = req.session.game
   let game = findGame(gamename)
-  if (game.status != 0) {
+  if (game.round != 0) {
     throw new Error(`Game ${gamename} is in progress, you cannot leave.`)
   }
   let users = game.users
@@ -272,7 +233,7 @@ function createGame(req, res) {
     games[gamename] = {
       name: gamename,
       rule: '', // 屠边 屠城
-      round: 1,
+      round: 0,
       roundState: {
         state: 'nightStart',
         part: 0
@@ -294,10 +255,11 @@ function createGame(req, res) {
 function startGame(req, res) {
   let info = req.body
   let game = findGame(req.session.game)
-  if (game.status != -1) {
+  if (game.round != 0) {
     res.status(400).json({ message: 'game already started' })
     return
   }
+  game.round = 1
   io.to(game.name).emit('start')
   if(assignRoles(game, req.body) === 0) res.json({ success: true })
   else res.json({ success: false, message: "Bad Role Settings" })
