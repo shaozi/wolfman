@@ -1,49 +1,81 @@
 # Wolfman Game Rule (Chinese Version)
 
-## Game types
+## Roles
 
-There are two types of games players have to decide at the beginning on how the wolf can win the game:
+* Werewolves (狼人)
 
-1. 屠城局[编辑]
-玩家分成兩大陣營：「狼人」和「村民」[4]。
-狼人在黑夜吞噬一名玩家[4]，而村民則在白天通過發言整理信息、盤出邏輯、並試圖找出狼人。在遊戲的開始村民並不知道任何信息，而狼人互相認識。由一主持人（上帝）作為遊戲中間角色。遊戲就在白天和黑夜之間交替進行[4]。隨著身份和角色的搭配，使遊戲目標改變，用語言和表情騙過其是此遊戲的最大特色 在一些特殊情況之下，可能會出現「第三方」陣營，而第三方陣營的勝利將優先於狼人與村民陣。
-村民必須除掉所有狼人才能獲得勝利。狼人必須殺死場上所有村民或者在雙方擁有一樣人數時才能獲勝。[4]
-[4]
-屠边局[编辑]
-狼人杀掉村民阵营中的所有特殊村民（神职）或杀掉所有普通村民（平民）中的任意一种，即可获胜。
+  Each night, the werewolves pick 1 (this can change with the Personnages expansion pack) player to kill. The victim can be anyone except the Moderator, including other werewolves. The next day, they pretend to be a villager and try to seem unsuspicious. The number of werewolves in a game varies depending on the number of players.
 
-## The groups
+* Villagers (平民)
 
-In the basic game, there are 2 different groups:
+  They don't have any special power except thinking and the right to vote.
 
-* the werewolves (狼人): their goal is to eliminate as many villagers so that werewolves and villagers alive are of equal number.
-the villagers (all the other cards): their goal is to eliminate all the werewolves.
+* Sheriff (警长)
 
-* Werewolves[edit]
-Each night, the werewolves pick 1 (this can change with the Personnages expansion pack) player to kill. The victim can be anyone except the Moderator, including other werewolves. The next day, they pretend to be a villager and try to seem unsuspicious. The number of werewolves in a game varies depending on the number of players.
+  This card is given to a player besides their card. They are elected by a vote. This player's vote counts for 1.5 instead of one. If they die, they will decide who will be the next Sheriff or they can destroy the badge and there will be no sheriff. The Sheriff can be of any role, including a werewolf.
 
-Villagers[edit]
-They don't have any special power except thinking and the right to vote.
+* Witch (女巫)
 
-Seer/ Fortune Teller/ Oracle[edit]
-Each night, they can discover the real identity of a player. They must help the other villagers but discretely to not be found by werewolves.
+  She has two potions:
 
-Hunter[edit]
-If they are killed by werewolves or eliminated by vote, they must immediately kill another player of their choice.
+  * one to save the werewolves's victim
+  * one to eliminate a player
 
-Cupid[edit]
-The first night, Cupid chooses 2 players and make them fall in love, then becomes a villager. If one dies, the other dies too. A lover can't vote against the other lover. If the lovers are a villager and a werewolf, their objective changes; they must eliminate all the players except them.
+  She can only use each potion once during the game. She can use both potions during the same night. She can save herself if she has been attacked by the werewolves on the first night.
 
-Witch[edit]
-She has two potions:
+* Seer/ Fortune Teller/ Oracle/ Prophet (预言家)
 
-one to save the werewolves's victim
-one to eliminate a player
-She can only use each potion once during the game. She can use both[2] potions during the same night. She can save herself if she has been attacked by the werewolves on the first night.
+  Each night, they can discover the real identity of a player. However, they can only verify if a player is a werewolf or not. They cannot see if a player has special power.
 
-Little Girl[edit]
-The little girl can secretly look at the werewolves during their turn. If she is caught in the act, she dies instead of the victim. Because she will be scared to death, or depending on how you play the werewolves will kill her later on in the game. It is also possible for her to die immediately along with the victim and can not be saved.
+* Hunter (猎人)
 
-Sheriff/Captain[edit]
-This card is given to a player besides their card. They are elected by a vote. This player's vote counts for two instead of one. If they die, they will decide who will be the next Sheriff/Chief. The Sheriff/Chief can be of any role, including a werewolf.
+  If they are killed by werewolves or eliminated by vote, they MAY kill another player of their choice. They CANNOT kill if they were poisoned to death by the witch.
 
+* Guard (守卫)
+
+  A Guard can guard a different player every night (include self). The guarded player will survive if killed by the werewolf. An exception is if a player is both guarded and saved by the witch, the player will die.
+
+* Idiot (白痴)
+
+  An idiot will not be voted to death. If the idot is voted to death, he will expose his role, and he will not die. However, he will lost his voting power. An idiot can only be killed in the night.
+
+## Before game starts
+
+There are two types of games players have to decide at the beginning on how the wolves can win the game:
+
+1. Kill all (屠城)
+
+   All other players' count is reduced to equal or less than the count of werewolves
+
+2. Kill side (屠边)
+
+   All villagers are killed, or all special charactors are killed.
+
+## Game steps
+
+### Every day regular oder
+
+1. Annouce night, everyone close eyes
+2. Guard open eyes, guard a player, close eyes
+3. All wolves open eyes, vote kill a player, close eyes
+4. Witch open eyes, save/kill/do nothing, close eyes
+5. Prophet open eyes, check a player, close eyes
+6. Hunter open eyes, kill/do nothing, close eyes
+7. Annouce day, everyone open eyes
+8. Everyone see who died last night
+9. Each player in turn give a speech
+10. Everyone vote to kill a player.
+11. Eliminated player has a chance to give a speech.
+
+### First night and day special order
+
+1. The first night:
+
+   Follow the regular order
+  
+2. The first day:
+   1. Vote for the Sheriff. Everyone MAY nominate themselves. and they MAY withdraw.
+      After all candidates are nominated, only the player who NEVER nominate will vote.
+   2. The player who was killed in the FIRST night has a chance to speak
+
+3. Starting from the second night, everything follow the regular order.
