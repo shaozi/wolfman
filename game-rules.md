@@ -4,7 +4,7 @@
 
 * Werewolves (狼人)
 
-  Each night, the werewolves pick 1 (this can change with the Personnages expansion pack) player to kill. The victim can be anyone except the Moderator, including other werewolves. The next day, they pretend to be a villager and try to seem unsuspicious. The number of werewolves in a game varies depending on the number of players.
+  Each night, the werewolves pick 1 player to kill. The victim can be anyone, including other werewolves. The next day,they pretend to be a villager and try to seem unsuspicious. The number of werewolves in a game varies depending on the number of players.
 
 * Villagers (平民)
 

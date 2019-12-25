@@ -28,8 +28,7 @@
     <div class="form-group">
       <button class="btn btn-danger mr-2" (click)="leaveGame()"> Leave
         Game</button>
-      <button class="btn btn-success mr-2" [disabled]="game && game.users.length < 1" (click)="startGame()">Start
-        Game</button>
+     
       <button type="button" class="btn btn-secondary mr-2" (click)="showMyRole()">About Me</button>
 
       <button class="btn btn-secondary mr-2" (click)="voice1()">V1</button>
@@ -47,6 +46,7 @@
 
   <hr>
   <div *ngIf="myself.isOrganizer">
+    
     <form [formGroup]="optForm">
 
       <div class="form-group">
@@ -79,7 +79,8 @@
           <label class="btn btn-primary" [class.active]="optForm.value.idiot" formControlName="idiot" btnCheckbox
             tabindex="0" role="button">白痴</label></div>
       </div>
-
+      <button type="button" class="btn btn-success btn-block mt-5" [disabled]="game && game.users.length < 1" (click)="startGame()">Start
+        Game</button>
     </form>
     {{optForm.value | json}}
   </div>

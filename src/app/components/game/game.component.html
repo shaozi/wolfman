@@ -9,9 +9,20 @@
   </ng-template>
 
   <ng-template #userRole>
-    <div class="modal-body text-center">
-      <p>You are {{user.role}}</p>
-      <button type="button" class="btn btn-default" (click)="openModal(runSheriffOrNot)">OK</button>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">My Info</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalRef.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        You are {{user.role}}!
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" (click)="roleCheckReady()">I'm Ready. Let's go!</button>
+        <button type="button" class="btn btn-secondary" (click)="clickCancel()">Cancel</button>
+      </div>
     </div>
   </ng-template>
 
