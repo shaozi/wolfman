@@ -15,6 +15,8 @@ export class GameComponent implements OnInit {
   public user: WmUser
   public modalRef: BsModalRef
 
+  private socket
+  
   @ViewChild('userRole', { static: true }) userRole
   @ViewChild('runSheriffOrNot', { static: true }) runSheriffOrNot
 
@@ -24,6 +26,7 @@ export class GameComponent implements OnInit {
   ngOnInit() {
     this.getGame()
     this.getMyRole()
+    this.socket = this.sio.socket
   }
 
   handleError(error) {
@@ -46,7 +49,7 @@ export class GameComponent implements OnInit {
     this.http.get(`/api/myrole`)
       .subscribe((user: WmUser) => {
         this.user = user
-        this.openModal(this.userRole)
+        //this.openModal(this.userRole)
       },
         error => this.handleError(error)
       )

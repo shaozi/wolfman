@@ -75,6 +75,10 @@ function delGame(gamename) {
 
 function findSocketById(socketId) {
   assert(typeof socketId == 'string')
+  if (socketId === 'test') {
+    let keys = Object.keys(io.sockets.sockets)
+    return io.sockets.sockets[keys[0]]
+  }
   return io.sockets.sockets[socketId]
 }
 
