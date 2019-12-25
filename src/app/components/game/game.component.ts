@@ -16,8 +16,9 @@ export class GameComponent implements OnInit {
   public user: WmUser
   public modalRef: BsModalRef
   public readySent = false
+  public currentRound = ''
   private socket
-  
+
   @ViewChild('userRole', { static: true }) userRole
   @ViewChild('runSheriffOrNot', { static: true }) runSheriffOrNot
 
@@ -30,7 +31,9 @@ export class GameComponent implements OnInit {
     this.getMyRole()
     this.socket = this.sio.socket
     this.socket.on('gameState', async info => {
-      switch(info.type) {
+      this.currentRound = info.type
+      this.readySent = false
+      switch (info.type) {
         case 'nightStart':
           this.soundService.playSequence(['isNight', 'everyone', 'closeEyes'])
           break
@@ -68,23 +71,33 @@ export class GameComponent implements OnInit {
       )
   }
 
-  revealRole() {
-    //window.alert(`You are a ${this.user.role}`)
-    this.openModal(this.userRole)
-  }
-
   roleCheckReady() {
+    this.modalRef.hide()
     if (this.readySent) return
     this.http.post('/api/ready', {})
-    .subscribe((result: WmServerResponse)=>{
-      this.readySent = true
-      if (!result.success) {
-        console.log(result)
-      }
-    },
-    error => {
-      window.alert(error.message)
-    })
+      .subscribe((result: WmServerResponse) => {
+        this.readySent = true
+        if (!result.success) {
+          console.log(result)
+        }
+      },
+        error => {
+          window.alert(error.message)
+        })
+  }
+
+  vote(username) {
+    let data = { vote: username }
+    this.http.post('/api/vote/', data)
+      .subscribe((result: WmServerResponse) => {
+        this.readySent = true
+        if (!result.success) {
+          console.log(result)
+        }
+      },
+        error => {
+          window.alert(error.message)
+        })
   }
 
   confirmRunSheriff() {
