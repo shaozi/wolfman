@@ -98,13 +98,15 @@ function userJoinGame(username, gamename, socketId) {
     name: username,
     role: null,
     alive: true,
-    poison: false,
-    antidote: false,
+    poison: true,
+    antidote: true,
     sheriffVoteStatus: null,
     sheriff: false,
     canShoot: false, // for hunter
     protected: false,
     lastProtect: '',
+    hunterKilled: '',
+    lastAttacked: '',
     revealedIdiot: false,
     isOrganizer: isOrganizer,
   })
@@ -239,8 +241,6 @@ function createGame(req, res) {
       rule: '', // 屠边 屠城
       round: 0,
       roundState: 'nightStart', // waiting for what to be voted. sheriff, night kill, day kill,
-      hunterKilled: false,
-      lastAttacked: '', // last person attacked by wolf
       lastKilled: [], // list of deaths this round
       users: [], // username => user
       waiting: [], // users waiting for action
@@ -259,6 +259,7 @@ function createGame(req, res) {
 function startGame(req, res) {
   let gameOptions = req.body
   let game = findGame(req.session.game)
+  game.rule = gameOptions.gameType
   if (game.round != 0) {
     res.status(400).json({ message: 'game already started' })
     return
@@ -316,20 +317,16 @@ function shuffle(array) {
 function getUsers(users, state) {
   var check = ((state === "witchsave") || (state === "witchkill")) ? "witch" : state
   check = (state === "hunterdeath") ? "hunter" : check
-  var out = []
-  users.forEach((user) => {
-    if(!user.alive) return // Dead don't participate in anything
-    if(check === "nightStart" || check === "dayStart" || check === "killVote") out.push(user.name) // Everyone participates in these events
+  return users.filter((user) => {
+    if(!user.alive) return false // Dead don't participate in anything
+    if(check === "nightStart" || check === "dayStart" || check === "killVote") return true // Everyone participates in these events
     else if(user.role === check) { // Role Specific events
-      // Check if witch has potions
-      if(state === "witchsave" && user.antidote) out.push(user.name)
-      else if(state === "witchkill" && user.poison) out.push(user.name)
       // Check if hunter died
-      if(state === "hunterdeath" && game.hunterKilled) out.push(user.name)
-      else if(check != witch) out.push(user.name)
+      if(state === "hunterdeath" && game.hunterKilled) return true
+      else if(check != witch) return true
+      return false
     }
   })
-  return out
 }
 
 function maxProp(obj) {
@@ -342,33 +339,39 @@ function playGame(game) {
                    'prophet', 'hunter', 'dayStart', 'killVote', 'hunterdeath']
   if(game.ready) {
     // Deal with votes and move on
-    var user = findUserInGame(maxProp(game.votes), game.name) // Get max voted
-    switch(game.roundState) {
-      case 'guard':
-        user.protected = true
-        findUserInGame(getUsers(game.users, 'guard')[0], game.name).lastProtect = maxProp(game.votes)
-        break;
-      case 'wolf':
-        if(!user.protected) {
-          if(user.role === "hunter") game.hunterKilled = true
+    // Unless no votes
+    if(game.votes.length > 0) {
+      var user = findUserInGame(maxProp(game.votes), game.name) // Get max voted
+      game.votes = [] // reset votes
+      switch(game.roundState) {
+        case 'guard':
+          user.protected = true
+          getUsers(game.users, 'guard')[0].lastProtect = maxProp(game.votes)
+          break;
+        case 'wolf':
+          if(!user.protected) {
+            if(user.role === "hunter") user.hunterKilled = true
+            game.lastKilled.push(user.name)
+            getUsers(game, "witch").lastAttacked = user.name
+          }
+          break;
+        case 'witchsave':
+          if(user.protected) {
+            game.lastKilled.push(user.name)
+          } else {
+            game.lastKilled.pop()
+          }
+          getUsers(game.users, 'guard')[0].antidote = false
+          break;
+        case 'witchkill':
+          getUsers(game.users, 'guard')[0].poison = false
+        case 'hunter':
+        case 'killVote':
+        case 'hunterDeath':
+          if(user.role === "hunter") user.hunterKilled = true
+          user.alive = false
           game.lastKilled.push(user.name)
-          game.lastAttacked = user.name
-        }
-        break;
-      case 'witchsave':
-        if(user.protected) {
-          game.lastKilled.push(user.name)
-        } else {
-          game.lastKilled.pop()
-        }
-        break;
-      case 'witchkill':
-      case 'hunter':
-      case 'killVote':
-      case 'hunterDeath':
-        if(user.role === "hunter") game.hunterKilled = true
-        user.alive = false
-        game.lastKilled.push(user.name)
+      }
     }
     game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length ? 0 : roundList.indexOf(game.roundState) + 1]
     game.ready = false
@@ -381,11 +384,27 @@ function playGame(game) {
       playGame(game) // Go to next stage
     } else {
       console.log(game.roundState)
-      if(game.roundState === "witchsave") io.to(game.name).emit("gameState", { state: game.roundState, round: game.round, lastAttacked: game.lastAttacked})
-      else if(game.roundState === "hunter") io.to(game.name).emit("gameState", { state: game.roundState, round: game.round, hunterKilled: game.hunterKilled})
-      else io.to(game.name).emit("gameState", { state: game.roundState, round: game.round })
+      if(game.roundState == "dayStart" && checkEnd(game)) {
+        io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
+
+      } else {
+        io.to(game.name).emit("gameState", { state: game.roundState, round: game.round })
+      }
     }
   }
+}
+
+function checkEnd(game) {
+  // 0 = not ended, 1 = wolf win, 2 = wolf loss
+  if(getUsers(game.users, "wolf").filter((user) => { return user.alive }).length === 0) return 2
+  if(game.rule === "killAll") { // All dead
+    if(game.users.filter((user) => { return user.role != "wolf" && user.alive }).length === 0) return 1
+  }
+  if(game.rule === "killSide") { // All villagers dead or all specials dead
+    if(game.users.filter((user) => { return user.role == "villager" && user.alive }).length === 0 ||
+       game.users.filter((user) => { return user.role != "wolf" && user.role != "villager" && user.alive }).length === 0) return 1
+  }
+  return 0
 }
 
 /**
