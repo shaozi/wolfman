@@ -28,7 +28,7 @@
     <div class="form-group">
       <button class="btn btn-danger mr-2" (click)="leaveGame()"> Leave
         Game</button>
-      <button class="btn btn-success mr-2" [disabled]="game && game.users.length < 2" (click)="startGame()">Start
+      <button class="btn btn-success mr-2" [disabled]="game && game.users.length < 1" (click)="startGame()">Start
         Game</button>
       <button type="button" class="btn btn-secondary mr-2" (click)="showMyRole()">About Me</button>
 
@@ -44,6 +44,39 @@
       <span class="badge badge-info">{{user.name}}</span> <span *ngIf="user.isOrganizer">(organizer)</span>
     </span>
   </div>
+
+  <hr>
+  <div *ngIf="myself.isOrganizer">
+    <form [formGroup]="optForm">
+
+      <div class="form-group">
+        <label>游戏类型：</label>
+        <div class="btn-group" btnRadioGroup formControlName="gameType">
+          <label btnRadio="killAll" class="btn btn-primary"
+                 tabindex="0" role="button">屠城</label>
+          <label btnRadio="killSide" class="btn btn-primary"
+                 tabindex="0" role="button">屠边</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>神民：</label>
+        <label class="btn btn-primary" [class.active]="optForm.value.witch" formControlName="witch" btnCheckbox
+          tabindex="0" role="button">女巫</label>
+        <label class="btn btn-primary" [class.active]="optForm.value.prophet" formControlName="prophet"
+          btnCheckbox tabindex="0" role="button">预言家</label>
+        <label class="btn btn-primary" [class.active]="optForm.value.hunter" formControlName="hunter"
+          btnCheckbox tabindex="0" role="button">猎人</label>
+        <label class="btn btn-primary" [class.active]="optForm.value.guard" formControlName="guard" btnCheckbox
+          tabindex="0" role="button">守卫</label>
+        <label class="btn btn-primary" [class.active]="optForm.value.idiot" formControlName="idiot" btnCheckbox
+          tabindex="0" role="button">白痴</label>
+      </div>
+
+    </form>
+    {{optForm.value | json}}
+  </div>
+
   <hr>
   <div class="mb-3">
     <div style="overflow: scroll; height: 100px;" #scrollMe [scrollTop]="scrollMe.scrollHeight">

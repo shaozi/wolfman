@@ -10,7 +10,8 @@ import { Routes, RouterModule } from '@angular/router';
 import { ManagepageComponent } from './components/managepage/managepage.component';
 import { GameComponent } from './components/game/game.component';
 import { ModalModule } from 'ngx-bootstrap/modal';
-
+import { ButtonsModule } from 'ngx-bootstrap/buttons';
+import { ReactiveFormsModule } from '@angular/forms';
 
 
 @NgModule({
@@ -25,8 +26,10 @@ import { ModalModule } from 'ngx-bootstrap/modal';
     BrowserModule,
     AppRoutingModule,
     FormsModule,
+    ReactiveFormsModule,
     HttpClientModule,
-    ModalModule.forRoot()
+    ModalModule.forRoot(),
+    ButtonsModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]

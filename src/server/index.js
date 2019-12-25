@@ -296,15 +296,22 @@ function createGame(req, res) {
 }
 
 function startGame(req, res) {
-  let info = req.body
+  let gameOptions = req.body
   let game = findGame(req.session.game)
   if (game.status != -1) {
     res.status(400).json({ message: 'game already started' })
     return
   }
+  if (game.users.length < 4) {
+    // test only
+    game.status = 0 // first night
+    game.voteFor = 'sheriff'
+    game.voteRound = 1
+    io.to(game.name).emit('start')
+    res.json({ success: true })
+    return
+  }
   let counts = {
-    2: { wolf: 1, villager: 1 },
-    3: { wolf: 1, villager: 2 },
     4: { wolf: 1, villager: 3 },
     5: { wolf: 1, villager: 4 },
     6: { wolf: 2, villager: 2, witch: 1, prophet: 1 },
@@ -316,7 +323,7 @@ function startGame(req, res) {
     12: { wolf: 4, villager: 4, idiot: 1, witch: 1, prophet: 1, hunter: 1 }
   }
   assignRoles(game, counts[game.users.length])
-  game.status = 0 // vote for sheriff
+  game.status = 0 // first night
   game.voteFor = 'sheriff'
   game.voteRound = 1
   io.to(game.name).emit('start')
@@ -408,4 +415,4 @@ app.get('/api/me', function (req, res) {
 var port = 3100
 http.listen(port, function () {
   console.log(`listening on *:${port}`);
-});
+})
