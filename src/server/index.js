@@ -238,14 +238,13 @@ function createGame(req, res) {
       name: gamename,
       rule: '', // 屠边 屠城
       round: 0,
-      roundState: {
-        state: 'nightStart',
-        part: 0
-      }, // waiting for what to be voted. sheriff, night kill, day kill,
+      roundState: 'nightStart', // waiting for what to be voted. sheriff, night kill, day kill,
       lastAttacked: '', // last person attacked by wolf
+      lastKilled: [], // list of deaths this round
       users: [], // username => user
       waiting: [], // users waiting for action
-      votes: {} // username: votes
+      votes: {}, // username: votes
+      ready: false
     }
     userJoinGame(username, gamename, socket.id)
     saveUserGameToSession(req, username, gamename)
@@ -326,70 +325,63 @@ function getUsers(users, state) {
   return out
 }
 
+function maxProp(obj) {
+  return Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b)
+}
+
 function playGame(game) {
   // Waiting list should be empty when this starts
-  let roundList = ['nightStart', 'guard', 'wolves', 'witch',
+  let roundList = ['nightStart', 'guard', 'wolf', 'witchsave', 'witchkill',
                    'prophet', 'hunter', 'dayStart', 'killVote']
-  game.waiting = getUsers(game.users, game.roundState.state)
-  if(game.waiting.length === 0) {
-    // Choose next stage or looparound
-    game.roundState.state = roundList[roundList.findIndex(game.roundState.state) == roundList.length ? 0 : roundList.findIndex(game.roundState.state) + 1]
-    playGame(game) // Skip to next stage
-  }
-
-  switch(game.roundState.state) {
-    case 'nightStart': // Announce night, everyone close eyes
-      io.to(game.gamename).emit("gameState", { type: "nightStart"})
-      break;
-    case 'guard': // Guard open eyes, guard a player, close eyes
-      game.waiting = getUsers(game.users, "guard")
-      io.to(game.gamename).emit("gameState", { type: "guard"})
-      break;
-    case 'wolf': // All wolves open eyes, vote kill a player, close eyes
-      game.waiting = getUsers(game.users, "wolf")
-      game.roundState.state = 'witch'
-      if(game.waiting.length === 0) {
-        playGame(game) // Skip to next stage
+  if(game.ready) {
+    // Deal with votes and move on
+    // switch(game.roundState) {
+    //   case 'guard':
+    //     findUserInGame(maxProp(game.votes), game.name).protected = true
+    //     getUsers(game.users, 'guard').forEach((user) => { findUserInGame(user, game.name).lastProtect = maxProp(game.votes) })
+    //     break;
+    //   case 'wolf':
+    //     var user = findUserInGame(maxProp(game.votes), game.name)
+    //     if(!user.protected) {
+    //       user.alive = false
+    //       game.lastKilled.push(user.name)
+    //       game.lastAttacked = user.name
+    //     }
+    //     break;
+    //   case 'witch':
+    //     switch(game.roundState.part) {
+    //       case 1:
+    //         io.to(game.name).emit("gameState", { type: "witch", part: 1})
+    //       case 2:
+    //         io.to(game.name).emit("gameState", { type: "witch", part: 2})
+    //     }
+    //     break;
+    //   case 'prophet':
+    //     io.to(game.name).emit("gameState", { type: "guard"})
+    //     break;
+    //   case 'hunter':
+    //     io.to(game.name).emit("gameState", { type: "guard"})
+    //     break;
+    //   case 'killVote':
+    //     break;
+    // }
+    game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length ? 0 : roundList.indexOf(game.roundState) + 1]
+    game.ready = false
+    playGame(game) // Go to next stage
+  } else {
+    game.waiting = getUsers(game.users, game.roundState) // Get users for this round
+    if(game.waiting.length === 0) {
+      // Skip this round
+      game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length ? 0 : roundList.indexOf(game.roundState) + 1]
+      playGame(game) // Go to next stage
+    } else {
+      console.log(game.roundState)
+      if(game.roundState === 'witchsave') {
+        io.to(game.name).emit("gameState", { state: game.roundState, round: game.round, lastAttacked: game.lastAttacked})
       } else {
-        io.to(game.gamename).emit("gameState", { type: "wolf"})
+        io.to(game.name).emit("gameState", { state: game.roundState , round: game.round })
       }
-      break;
-    case 'witch': // Witch open eyes, save/kill/do nothing, close eyes
-      game.waiting = getUsers(game.users, "witch")
-      if(game.waiting.length === 0) {
-        game.roundState.state = 'prophet'
-        playGame(game) // Skip to next stage
-      } else {
-        switch(game.roundState.part) {
-          case 1:
-            io.to(game.gamename).emit("gameState", { type: "witch", part: 1})
-          case 2:
-            io.to(game.gamename).emit("gameState", { type: "witch", part: 2})
-        }
-      }
-      break;
-    case 'prophet': // Prophet open eyes, check a player, close eyes
-      game.waiting = getUsers(game.users, "prophet")
-      game.roundState.state = 'hunter'
-      if(game.waiting.length === 0) {
-        playGame(game) // Skip to next stage
-      } else {
-        io.to(game.gamename).emit("gameState", { type: "guard"})
-      }
-      break;
-    case 'hunter': // Hunter open eyes, kill/do nothing, close eyes
-      game.waiting = getUsers(game.users, "hunter")
-      game.roundState.state = 'dayStart'
-      if(game.waiting.length === 0) {
-        playGame(game) // Skip to next stage
-      } else {
-        io.to(game.gamename).emit("gameState", { type: "guard"})
-      }
-      break;
-    case 'dayStart': // Annouce day, dead are shown, everyone gives a speech
-      break;
-    case 'killVote': // Everyone vote to kill a player, player gets to say something before death.
-      break;
+    }
   }
 }
 
@@ -402,27 +394,25 @@ function vote(req, res) {
   var user = findUserInGame(req.session.user, req.session.game)
 
   // Check Validity based on round
-  switch(game.roundState.state) {
+  switch(game.roundState) {
     case "guard":
       if(user.lastProtect === vote) {
         res.json({ success: false, message: "Protected last round"})
         return
       }
       break
-    case "witch":
-      switch(game.roundState.part) {
-        case 1: // Save
-          if(lastAttacked === user.name && game.round !== 1) {
-            res.json({ success: false, message: "Can't save self"})
-            return
-          }
-          break
-        case 2: // Kill
-          if(vote == user.name) {
-            res.json({ success: false, message: "Can't poison self"})
-            return
-          }
+    case "witchsave":
+      if(lastAttacked === user.name && game.round !== 1) {
+        res.json({ success: false, message: "Can't save self"})
+        return
       }
+      break
+    case "witchkill": // Kill
+      if(vote == user.name) {
+        res.json({ success: false, message: "Can't poison self"})
+        return
+      }
+      break
   }
   if(!findUserInGame(vote, req.session.game).alive) {
     res.json({ success: false, message: "Vote Not Alive"})
@@ -440,7 +430,10 @@ function ready(req, res) {
   var game = findGame(req.session.game)
   game.waiting.splice(game.waiting.indexOf(req.session.user), 1)
   res.json({ success: true })
-  if(game.waiting.length == 0) playGame(game)
+  if(game.waiting.length == 0) {
+    game.ready = true
+    playGame(game)
+  }
 }
 
 function chat(req, res) {
