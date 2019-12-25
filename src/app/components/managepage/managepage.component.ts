@@ -6,6 +6,7 @@ import { SocketioService } from 'src/app/services/socketio.service';
 import { SoundService } from 'src/app/services/sound.service';
 import { Router } from '@angular/router';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+import { FormBuilder, FormGroup } from '@angular/forms'
 
 @Component({
   selector: 'app-managepage',
@@ -22,6 +23,8 @@ export class ManagepageComponent implements OnInit {
   public chatMessage = ''
   public inGame: boolean = false
   public modalRef: BsModalRef
+  public optForm: FormGroup
+  public myself = {}
 
   @ViewChild('aboutMe', {static: true}) aboutMe
 
@@ -30,7 +33,8 @@ export class ManagepageComponent implements OnInit {
   constructor(private http: HttpClient, private sio: SocketioService, 
     private soundService: SoundService,
     private router: Router,
-    private modalService: BsModalService) {
+    private modalService: BsModalService,
+    private fb: FormBuilder) {
   }
 
   ngOnInit() {
@@ -50,6 +54,15 @@ export class ManagepageComponent implements OnInit {
     
     this.socket.on('start', () => {
       this.router.navigate(['/game'])
+    })
+
+    this.optForm = this.fb.group({
+      gameType: 'killAll',
+      witch: true,
+      prophet: true,
+      hunter: false,
+      guard: false,
+      idiot: false
     })
   }
 
@@ -95,10 +108,15 @@ export class ManagepageComponent implements OnInit {
         if (this.sess.gamename) {
           this.inGame = true
           this.refreshGame()
+          this.http.get('/api/myrole')
+          .subscribe(myself => {
+            this.myself = myself
+          })
         }
       },
-      error => this.handleError(error)
-      )
+      error => {
+        this.router.navigate(['/login'])
+      })
       
   }
 
@@ -135,7 +153,7 @@ export class ManagepageComponent implements OnInit {
     )
   }
   startGame() {
-    this.http.post('/api/start', {}).subscribe(res => {
+    this.http.post('/api/start', this.optForm.value).subscribe(res => {
       this.router.navigate(['/game'])
     },
     error => this.handleError(error)

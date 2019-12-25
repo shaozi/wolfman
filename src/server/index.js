@@ -253,7 +253,7 @@ function createGame(req, res) {
 }
 
 function startGame(req, res) {
-  let info = req.body
+  let gameOptions = req.body
   let game = findGame(req.session.game)
   if (game.round != 0) {
     res.status(400).json({ message: 'game already started' })
