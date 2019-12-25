@@ -298,23 +298,6 @@ function startGame(req, res) {
     res.status(400).json({ message: 'game already started' })
     return
   }
-  let counts = {
-    2: { wolf: 1, villager: 1 },
-    3: { wolf: 1, villager: 2 },
-    4: { wolf: 1, villager: 3 },
-    5: { wolf: 1, villager: 4 },
-    6: { wolf: 2, villager: 2, witch: 1, prophet: 1 },
-    7: { wolf: 2, villager: 2, witch: 1, prophet: 1, hunter: 1 },
-    8: { wolf: 2, villager: 3, witch: 1, prophet: 1, hunter: 1 },
-    9: { wolf: 3, villager: 3, witch: 1, prophet: 1, hunter: 1 },
-    10: { wolf: 3, villager: 3, idiot: 1, witch: 1, prophet: 1, hunter: 1 },
-    11: { wolf: 4, villager: 3, idiot: 1, witch: 1, prophet: 1, hunter: 1 },
-    12: { wolf: 4, villager: 4, idiot: 1, witch: 1, prophet: 1, hunter: 1 }
-  }
-  assignRoles(game, counts[game.users.length])
-  game.status = 0 // vote for sheriff
-  game.voteFor = 'sheriff'
-  game.voteRound = 1
   io.to(game.name).emit('start')
   if(assignRoles(game, req.body) === 0) res.json({ success: true })
   else res.json({ success: false, message: "Bad Role Settings" })
