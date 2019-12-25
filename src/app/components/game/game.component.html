@@ -21,7 +21,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-success" (click)="roleCheckReady()">I'm Ready. Let's go!</button>
-        <button type="button" class="btn btn-secondary" (click)="clickCancel()">Cancel</button>
+        <button type="button" class="btn btn-secondary" (click)="modalRef.hide()">Cancel</button>
       </div>
     </div>
   </ng-template>
@@ -41,6 +41,7 @@
       <div class="col-6 card shadow" *ngFor="let user of game.users">
         <div class="card-body">
           {{user.name}}
+          <button type="button" class="btn btn-outling-primary" [disabled]='readySent' (click)="vote(user.name)">Select</button> 
         </div>
       </div>
     </div>
