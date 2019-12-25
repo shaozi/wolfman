@@ -28,7 +28,7 @@ export class ManagepageComponent implements OnInit {
   private socket
 
   constructor(private http: HttpClient, private sio: SocketioService, 
-    //private sound: SoundService,
+    private soundService: SoundService,
     private router: Router,
     private modalService: BsModalService) {
   }
@@ -96,11 +96,14 @@ export class ManagepageComponent implements OnInit {
           this.inGame = true
           this.refreshGame()
         }
-        this.modalRef = this.modalService.show(this.aboutMe, { class: 'modal-sm' });
       },
       error => this.handleError(error)
       )
       
+  }
+
+  showMyRole() {
+    this.modalRef = this.modalService.show(this.aboutMe, { class: 'modal-sm' });
   }
 
   clickOk() {
@@ -155,7 +158,10 @@ export class ManagepageComponent implements OnInit {
     this.sendChat()
   }
 
-  toggleMusic() {
-    //this.sound.toggle()
+  voice1() {
+    this.soundService.playSequence(['isNight', 'everyone', 'closeEyes'])
+  }
+  voice2() {
+    this.soundService.playSequence(['wolves', 'openEyes'])
   }
 }
