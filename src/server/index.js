@@ -535,8 +535,7 @@ function logout(req, res) {
 }
 
 function getUserInfo(req, res) {
-  res.json({ user: findUserInGame(req.session.user, req.session.game)})
-  res.json({ success: true })
+  res.json({ success: true, user: findUserInGame(req.session.user, req.session.game)})
 }
 
 app.post('/api/login', login)
