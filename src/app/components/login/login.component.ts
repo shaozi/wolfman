@@ -19,7 +19,7 @@ export class LoginComponent implements OnInit {
   }
 
   me() {
-    this.http.get(`/api/me`)
+    this.http.get(`/api/whoami`)
       .subscribe((me: { username: string, gamename: string }) => {
         this.username = me.username
         if (me.username && me.gamename) {

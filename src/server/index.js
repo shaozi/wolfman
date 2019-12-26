@@ -553,7 +553,7 @@ app.post('/api/create', createGame)
 app.post('/api/chat', chat)
 app.post('/api/start', startGame)
 app.post('/api/vote', vote)
-app.get('/api/myrole', getMyRole)
+app.get('/api/me', getMyRole)
 app.post('/api/ready', ready)
 
 app.get('/api/game', function (req, res) {
@@ -567,7 +567,7 @@ app.get('/api/game', function (req, res) {
   }
 })
 
-app.get('/api/me', function (req, res) {
+app.get('/api/whoami', function (req, res) {
   res.json({ username: req.session.user, gamename: req.session.game })
 })
 

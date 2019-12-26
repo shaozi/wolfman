@@ -97,7 +97,7 @@ export class ManagepageComponent implements OnInit {
   }
 
   me() {
-    this.http.get(`/api/me`)
+    this.http.get(`/api/whoami`)
       .subscribe((me: { username: string, gamename: string }) => {
         if (!me.username) {
           this.router.navigate(['/login'])
@@ -112,7 +112,7 @@ export class ManagepageComponent implements OnInit {
         if (this.sess.gamename) {
           this.inGame = true
           this.refreshGame()
-          this.http.get('/api/myrole')
+          this.http.get('/api/me')
           .subscribe(myself => {
             this.myself = myself
             this.rest.user = myself

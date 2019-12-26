@@ -115,7 +115,7 @@ export class GameComponent implements OnInit {
     })
   }
 
-  async playSound(seq) {
+  async playSound(seq: Array<string>, callback?: ()=>any) {
     if (!this.rest.user) {
       console.log('user is not ready')
       return
@@ -125,6 +125,9 @@ export class GameComponent implements OnInit {
       return
     }
     await this.soundService.playSequence(seq)
+    if (callback) {
+      callback()
+    }
   }
 
   handleError(error) {
@@ -153,7 +156,7 @@ export class GameComponent implements OnInit {
   }
 
   getMyRole(callback?: (user: WmUser)=>void) {
-    this.http.get(`/api/myrole`)
+    this.http.get(`/api/me`)
       .subscribe((user: WmUser) => {
         this.user = user
         if (callback) {
