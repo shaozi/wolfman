@@ -81,8 +81,12 @@ export class GameComponent implements OnInit {
         case 'sheriff':
           console.log('sheriff died')
           break
+        case 'roleCheck':
+          console.log('Please check your role')
+          break
         default:
-          window.alert(`${info.state} is not implemented!`)
+          console.log(info)
+          window.alert(`socket info state ${info.state} is not implemented!`)
       }
     })
   }
@@ -129,7 +133,7 @@ export class GameComponent implements OnInit {
   }
 
   sendReady() {
-    this.modalRef.hide()
+    if (this.modalRef) this.modalRef.hide()
     if (this.readySent) return
     this.http.post('/api/ready', {})
       .subscribe((result: WmServerResponse) => {
@@ -139,12 +143,16 @@ export class GameComponent implements OnInit {
         }
       },
         error => {
+          console.log(error)
           window.alert(error.message)
         })
   }
 
   sendVote(user) {
-    let allow = this.currentState === 'killVote' || this.currentState.includes(this.user.role)
+    let allow = this.currentState === 'killVote' 
+      || this.currentState.includes(this.user.role)
+      || this.user.sheriff && this.currentState === 'sheriff'
+      || this.user.role === 'hunter' && this.currentState === 'hunterDeath'
     if (!allow) {
       console.log(this.currentState, this.currentRound, this.user)
       console.log('not allowed')
@@ -164,6 +172,7 @@ export class GameComponent implements OnInit {
         }
       },
         error => {
+          console.log(error)
           window.alert(error.message)
         })
   }
