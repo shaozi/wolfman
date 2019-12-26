@@ -240,7 +240,7 @@ function createGame(req, res) {
       name: gamename,
       rule: '', // 屠边 屠城
       round: 0,
-      roundState: 'nightStart', // waiting for what to be voted. sheriff, night kill, day kill,
+      roundState: 'roleCheck', // waiting for what to be voted. sheriff, night kill, day kill,
       lastKilled: [], // list of deaths this round
       voteKilled: '', // Who died by vote
       sheriffAlive: true,
@@ -271,6 +271,7 @@ function startGame(req, res) {
   if(assignRoles(game, req.body) === 0) res.json({ success: true })
   else res.json({ success: false, message: "Bad Role Settings" })
   game.waiting = getUsers(game.users, "nightStart")
+  io.on(game.name).emit("gameState", { type: "roleCheck" })
 }
 
 function assignRoles(game, data) {
@@ -379,11 +380,16 @@ function playGame(game) {
           if(user.role === "hunter") user.hunterKilled = true
           if(user.sheriff) game.sheriffAlive = false
           user.alive = false
-          if(game.roundState === 'killVote') game.voteKilled = user.name
+          if(game.roundState === 'killVote') {
+            if(user.role == "idiot") {
+              user.revealedIdiot = true
+            } else game.voteKilled = user.name
+          }
           else game.lastKilled.push(user.name)
       }
     }
-    game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length ? 0 : roundList.indexOf(game.roundState) + 1]
+    if(game.roundState === "roleCheck") game.roundState = "nightStart"
+    else game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length ? 0 : roundList.indexOf(game.roundState) + 1]
     game.ready = false
     playGame(game) // Go to next stage
   } else {
