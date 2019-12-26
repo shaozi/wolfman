@@ -27,12 +27,13 @@ let lanuchUser = async (username) => {
   } else {
     await Promise.delay(5000)
     await page.$eval('#join', el => el.click())
+    await Promise.delay(15000)
+    await page.waitFor('#myrole')
+    await page.$eval('#myrole', ele=>ele.click())
+    await page.waitFor('#roleready')
+    await page.$eval('#roleready', ele=>ele.click())
   }
-  await Promise.delay(20000)
-  await page.waitFor('#myrole')
-  await page.$eval('#myrole', ele=>ele.click())
-  await page.waitFor('#roleready')
-  await page.$eval('#roleready', ele=>ele.click())
+  
 
   //await browser.close();
 }
