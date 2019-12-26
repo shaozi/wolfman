@@ -242,6 +242,8 @@ function createGame(req, res) {
       round: 0,
       roundState: 'nightStart', // waiting for what to be voted. sheriff, night kill, day kill,
       lastKilled: [], // list of deaths this round
+      voteKilled: '', // Who died by vote
+      sheriffAlive: true,
       users: [], // username => user
       waiting: [], // users waiting for action
       votes: {}, // username: votes
@@ -268,7 +270,7 @@ function startGame(req, res) {
   io.to(game.name).emit('start')
   if(assignRoles(game, req.body) === 0) res.json({ success: true })
   else res.json({ success: false, message: "Bad Role Settings" })
-  playGame(game)
+  game.waiting = getUsers(game.users, "nightStart")
 }
 
 function assignRoles(game, data) {
@@ -323,6 +325,8 @@ function getUsers(users, state) {
     else if(user.role === check) { // Role Specific events
       // Check if hunter died
       if(state === "hunterdeath" && game.hunterKilled) return true
+      // Check if sheriff died
+      if(state === "sheriff" && !game.sheriffAlive) return true
       else if(check != "witch") return true
       return false
     }
@@ -336,14 +340,18 @@ function maxProp(obj) {
 function playGame(game) {
   // Waiting list should be empty when this starts
   let roundList = ['nightStart', 'guard', 'wolf', 'witchsave', 'witchkill',
-                   'prophet', 'hunter', 'dayStart', 'killVote', 'hunterdeath']
+                   'prophet', 'hunter', 'dayStart', 'killVote', 'hunterdeath', 'sheriff']
   if(game.ready) {
     // Deal with votes and move on
     // Unless no votes
+    game.sheriffAlive = true
     if(game.votes.length > 0) {
       var user = findUserInGame(maxProp(game.votes), game.name) // Get max voted
       game.votes = [] // reset votes
       switch(game.roundState) {
+        case 'dayStart': // Sheriff Vote
+        case 'sheriff':
+          user.sheriff == true;
         case 'guard':
           user.protected = true
           getUsers(game.users, 'guard')[0].lastProtect = maxProp(game.votes)
@@ -351,6 +359,7 @@ function playGame(game) {
         case 'wolf':
           if(!user.protected) {
             if(user.role === "hunter") user.hunterKilled = true
+            if(user.sheriff) game.sheriffAlive = false
             game.lastKilled.push(user.name)
             getUsers(game, "witch").lastAttacked = user.name
           }
@@ -358,8 +367,9 @@ function playGame(game) {
         case 'witchsave':
           if(user.protected) {
             game.lastKilled.push(user.name)
+            if(user.sheriff) game.sheriffAlive = false
           } else {
-            game.lastKilled.pop()
+            if(findUserInGame(game.lastKilled.pop(), game.name).sheriff) game.sheriffAlive = true // Revive and check sheriff
           }
           getUsers(game.users, 'guard')[0].antidote = false
           break;
@@ -369,8 +379,10 @@ function playGame(game) {
         case 'killVote':
         case 'hunterDeath':
           if(user.role === "hunter") user.hunterKilled = true
+          if(user.sheriff) game.sheriffAlive = false
           user.alive = false
-          game.lastKilled.push(user.name)
+          if(game.roundState === 'killVote') game.voteKilled = user.name
+          else game.lastKilled.push(user.name)
       }
     }
     game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length ? 0 : roundList.indexOf(game.roundState) + 1]
@@ -386,7 +398,6 @@ function playGame(game) {
       console.log(game.roundState)
       if(game.roundState == "dayStart" && checkEnd(game)) {
         io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
-
       } else {
         io.to(game.name).emit("gameState", { state: game.roundState, round: game.round })
       }
@@ -442,7 +453,7 @@ function vote(req, res) {
   }
 
   if(!(vote in game.votes)) game.votes[vote] = 0;
-  game.votes[vote]++;
+  game.votes[vote] += user.sheriff ? 1.5 : 1;
   if(game.roundState === 'prophet') res.json({ success: true , wolf: findUserInGame(vote, req.session.game).role === 'wolf'})
   else res.json({ success: true })
 }
