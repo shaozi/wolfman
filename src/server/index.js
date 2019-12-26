@@ -102,7 +102,7 @@ function userJoinGame(username, gamename, socketId) {
     antidote: true,
     sheriffRunning: false,
     sheriff: false,
-    protected: false,
+    protect: '',
     lastProtect: '',
     hunterKilled: '',
     lastAttacked: '',
@@ -359,19 +359,20 @@ function playGame(game) {
           user.sheriff == true;
           break
         case 'guard':
-          user.protected = true
+          getUsers(game.users, 'guard')[0].protect = user.name
           getUsers(game.users, 'guard')[0].lastProtect = maxProp(game.votes)
           break;
         case 'wolf':
-          if(!user.protected) {
+          if(!(getUsers(game.users, 'guard')[0] == user.name)) {
             if(user.role === "hunter") user.hunterKilled = true
             if(user.sheriff) game.sheriffAlive = false
             game.lastKilled.push(user.name)
             getUsers(game.users, "witch")[0].lastAttacked = user.name
+            console.log(getUsers(game.users, "witch"))
           }
           break;
         case 'witchsave':
-          if(user.protected) {
+          if(getUsers(game.users, 'guard')[0] == user.name) {
             game.lastKilled.push(user.name)
             if(user.sheriff) game.sheriffAlive = false
           } else {
@@ -533,16 +534,8 @@ function logout(req, res) {
   }
 }
 
-function getMyRole(req, res) {
-  try {
-    let username = req.session.user
-    let gamename = req.session.game
-    let game = findGame(gamename)
-    let user = game.users.find(u => { return u.name == username })
-    return res.json(user)
-  } catch (error) {
-    return res.status(400).json({ message: error.message })
-  }
+function getUserInfo(req, res) {
+  return findUserInGame(req.session.user, req.session.game)
 }
 
 app.post('/api/login', login)
@@ -553,7 +546,7 @@ app.post('/api/create', createGame)
 app.post('/api/chat', chat)
 app.post('/api/start', startGame)
 app.post('/api/vote', vote)
-app.get('/api/myrole', getMyRole)
+app.get('/api/me', getUserInfo)
 app.post('/api/ready', ready)
 
 app.get('/api/game', function (req, res) {
@@ -567,7 +560,7 @@ app.get('/api/game', function (req, res) {
   }
 })
 
-app.get('/api/me', function (req, res) {
+app.get('/api/whoami', function (req, res) {
   res.json({ username: req.session.user, gamename: req.session.game })
 })
 
