@@ -396,9 +396,9 @@ function playGame(game) {
           else game.lastKilled.push(user.name)
       }
     }
-    if(game.roundState === "roleCheck") 
+    if(game.roundState === "roleCheck")
       game.roundState = "nightStart"
-    else 
+    else
       game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1]
     game.ready = false
     playGame(game) // Go to next stage
@@ -408,6 +408,7 @@ function playGame(game) {
       // Skip this round
       console.log(`skip round ${game.roundState}`)
       game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1]
+      game.ready = false
       playGame(game) // Go to next stage
     } else {
       console.log(game.roundState)
