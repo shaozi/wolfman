@@ -349,6 +349,7 @@ function playGame(game) {
     if(game.votes.length > 0) {
       var user = findUserInGame(maxProp(game.votes), game.name) // Get max voted
       game.votes = [] // reset votes
+      console.log(game.roundState + ": Voted " + user.name)
       switch(game.roundState) {
         case 'sheriffNom':
           for(user in game.votes) findUserInGame(user, game.name).sheriffRunning = true
