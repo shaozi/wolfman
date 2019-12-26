@@ -37,48 +37,53 @@ export class GameComponent implements OnInit {
       this.readySent = false
       switch (info.state) {
         case 'nightStart':
-          await this.soundService.playSequence(['isNight', 'everyone', 'closeEyes'])
+          await this.playSound(['isNight', 'everyone', 'closeEyes'])
           this.sendReady()
           break
         case 'guard':
-          await this.soundService.playSequence(['guard', 'openEyes'])
-          await this.soundService.playSequence(['guard', 'choose'])
+          await this.playSound(['guard', 'openEyes'])
+          await this.playSound(['guard', 'choose'])
           break
         case 'wolf':
-          await this.soundService.playSequence(['guard', 'closeEyes'])
-          await this.soundService.playSequence(['wolves', 'openEyes'])
-          await this.soundService.playSequence(['wolves', 'choose'])
+          await this.playSound(['guard', 'closeEyes'])
+          await this.playSound(['wolves', 'openEyes'])
+          await this.playSound(['wolves', 'choose'])
           break
         case 'witchsave':
-          await this.soundService.playSequence(['wolves', 'closeEyes'])
-          await this.soundService.playSequence(['witch', 'openEyes'])
-          await this.soundService.playSequence(['witch', 'choose'])
+          await this.playSound(['wolves', 'closeEyes'])
+          await this.playSound(['witch', 'openEyes'])
+          await this.playSound(['witch', 'choose'])
           break
         case 'witchkill':
           
           break
         case 'prophet':
-          await this.soundService.playSequence(['witch', 'closeEyes'])
-          await this.soundService.playSequence(['prophet', 'openEyes'])
-          await this.soundService.playSequence(['prophet', 'choose'])
+          await this.playSound(['witch', 'closeEyes'])
+          await this.playSound(['prophet', 'openEyes'])
+          await this.playSound(['prophet', 'choose'])
           break
         case 'hunter':
-          await this.soundService.playSequence(['prophet', 'closeEyes'])
-          await this.soundService.playSequence(['hunter', 'openEyes'])
-          await this.soundService.playSequence(['hunter', 'choose'])
+          await this.playSound(['prophet', 'closeEyes'])
+          await this.playSound(['hunter', 'openEyes'])
+          await this.playSound(['hunter', 'choose'])
           break
         case 'dayStart':
-          await this.soundService.playSequence(['hunter', 'closeEyes'])
-          await this.soundService.playSequence(['isDay', 'everyone', 'openEyes'])
+          await this.playSound(['hunter', 'closeEyes'])
+          await this.playSound(['isDay', 'everyone', 'openEyes'])
           break
         case 'killVote':
-          await this.soundService.playSequence(['hunter', 'closeEyes'])
-          await this.soundService.playSequence(['isDay', 'everyone', 'openEyes'])
+          await this.playSound(['hunter', 'closeEyes'])
+          await this.playSound(['isDay', 'everyone', 'openEyes'])
           break
       }
     })
   }
-
+  async playSound(seq) {
+    if (this.user.isOrganizer) {
+      await this.soundService.playSequence(seq)
+    }
+  }
+  
   handleError(error) {
     console.log(error)
   }
