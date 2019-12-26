@@ -1,7 +1,7 @@
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SocketioService } from 'src/app/services/socketio.service';
-import { WmGame, WmUser, WmClientReponse, WmServerResponse } from 'src/app/interfaces';
+import { WmGame, WmUser, WmClientReponse, WmServerResponse, WmServerNotify } from 'src/app/interfaces';
 import { Router } from '@angular/router';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { SoundService } from 'src/app/services/sound.service';
@@ -16,7 +16,8 @@ export class GameComponent implements OnInit {
   public user: WmUser
   public modalRef: BsModalRef
   public readySent = false
-  public currentRound = ''
+  public currentRound = 0
+  public currentState = ''
   private socket
 
   @ViewChild('userRole', { static: true }) userRole
@@ -30,16 +31,49 @@ export class GameComponent implements OnInit {
     this.getGame()
     this.getMyRole()
     this.socket = this.sio.socket
-    this.socket.on('gameState', async info => {
-      this.currentRound = info.type
+    this.socket.on('gameState', async (info: WmServerNotify) => {
+      this.currentRound = info.round
+
       this.readySent = false
-      switch (info.type) {
+      switch (info.state) {
         case 'nightStart':
-          this.soundService.playSequence(['isNight', 'everyone', 'closeEyes'])
+          await this.soundService.playSequence(['isNight', 'everyone', 'closeEyes'])
+          this.sendReady()
           break
         case 'guard':
           await this.soundService.playSequence(['guard', 'openEyes'])
           await this.soundService.playSequence(['guard', 'choose'])
+          break
+        case 'wolf':
+          await this.soundService.playSequence(['guard', 'closeEyes'])
+          await this.soundService.playSequence(['wolves', 'openEyes'])
+          await this.soundService.playSequence(['wolves', 'choose'])
+          break
+        case 'witchsave':
+          await this.soundService.playSequence(['wolves', 'closeEyes'])
+          await this.soundService.playSequence(['witch', 'openEyes'])
+          await this.soundService.playSequence(['witch', 'choose'])
+          break
+        case 'witchkill':
+          
+          break
+        case 'prophet':
+          await this.soundService.playSequence(['witch', 'closeEyes'])
+          await this.soundService.playSequence(['prophet', 'openEyes'])
+          await this.soundService.playSequence(['prophet', 'choose'])
+          break
+        case 'hunter':
+          await this.soundService.playSequence(['prophet', 'closeEyes'])
+          await this.soundService.playSequence(['hunter', 'openEyes'])
+          await this.soundService.playSequence(['hunter', 'choose'])
+          break
+        case 'dayStart':
+          await this.soundService.playSequence(['hunter', 'closeEyes'])
+          await this.soundService.playSequence(['isDay', 'everyone', 'openEyes'])
+          break
+        case 'killVote':
+          await this.soundService.playSequence(['hunter', 'closeEyes'])
+          await this.soundService.playSequence(['isDay', 'everyone', 'openEyes'])
           break
       }
     })
@@ -71,7 +105,7 @@ export class GameComponent implements OnInit {
       )
   }
 
-  roleCheckReady() {
+  sendReady() {
     this.modalRef.hide()
     if (this.readySent) return
     this.http.post('/api/ready', {})
@@ -86,13 +120,24 @@ export class GameComponent implements OnInit {
         })
   }
 
-  vote(username) {
+  sendVote(username) {
+    let allow = this.currentState === 'killVote' || this.currentState.includes(this.user.role)
+    if (!allow) {
+      console.log(this.currentState, this.currentRound, this.user)
+      console.log('not allowed')
+      return
+    }
     let data = { vote: username }
     this.http.post('/api/vote/', data)
       .subscribe((result: WmServerResponse) => {
         this.readySent = true
         if (!result.success) {
           console.log(result)
+        } else {
+          if ('wolf' in result) {
+            window.alert(result.wolf ? '狼人' : '平民')
+          }
+          this.sendReady()
         }
       },
         error => {
