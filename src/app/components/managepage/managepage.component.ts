@@ -113,9 +113,9 @@ export class ManagepageComponent implements OnInit {
           this.inGame = true
           this.refreshGame()
           this.http.get('/api/me')
-          .subscribe(myself => {
-            this.myself = myself
-            this.rest.user = myself
+          .subscribe((data: {user: any}) => {
+            this.myself = data.user
+            this.rest.user = data.user
           })
         }
       },

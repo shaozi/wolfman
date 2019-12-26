@@ -157,10 +157,10 @@ export class GameComponent implements OnInit {
 
   getMyRole(callback?: (user: WmUser)=>void) {
     this.http.get(`/api/me`)
-      .subscribe((user: WmUser) => {
-        this.user = user
+      .subscribe((data: {user: WmUser}) => {
+        this.user = data.user
         if (callback) {
-          callback(user)
+          callback(data.user)
         }
       },
         error => this.handleError(error)
