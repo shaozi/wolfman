@@ -36,7 +36,8 @@ export interface WmCreateRequest extends WmClientRequest {
 
 export interface WmServerResponse {
   success: boolean,
-  message?: string
+  message?: string,
+  wolf?: boolean
 }
 
 export interface WmServerMessage {
@@ -48,4 +49,9 @@ export interface WmClientReponse {
   id: string,
   inReplyTo: string,
   userId: string
+}
+
+export interface WmServerNotify {
+  state: string,
+  round: number
 }
