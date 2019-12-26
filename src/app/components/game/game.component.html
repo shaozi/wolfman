@@ -33,7 +33,7 @@
     </div>
 
     <div *ngIf="user">
-      <button id="myrole" class="btn btn-info" (click)="openModal(userRole)">{{user.name}}</button>
+      <button type="button" id="myrole" class="btn btn-info" (click)="openModal(userRole)">{{user.name}}</button>
       <div> {{currentRound}} {{currentState}} {{user.role}} </div>
     </div>
 
@@ -41,12 +41,14 @@
       <div class="col-6 card shadow" *ngFor="let user of game.users">
         <div class="card-body">
           {{user.name}}
-          <button type="button" class="btn btn-outline-primary" [disabled]='readySent' (click)="sendVote(user)">Select</button> 
+          <button type="button" class="btn btn-outline-primary" (click)="sendVote(user)">Select</button> 
         </div>
       </div>
     </div>
     <pre>
-      {{user | json}}
+user:      {{user | json}}
+
+opt:      {{gameOpt | json}}
     </pre>
     
   </div>

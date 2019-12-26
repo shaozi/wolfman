@@ -4,6 +4,7 @@ import { WmJoinRequest, WmServerResponse, WmCreateRequest, WmServerMessage } fro
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { SocketioService } from 'src/app/services/socketio.service';
 import {Howl, Howler} from 'howler'
+import { RestfulService } from '../services/restful.service';
 
 @Component({
   selector: 'app-root',

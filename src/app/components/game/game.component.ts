@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { SoundService } from 'src/app/services/sound.service';
 import { RestfulService } from 'src/app/services/restful.service';
+import { assertNotNull } from '@angular/compiler/src/output/output_ast';
 
 @Component({
   selector: 'app-game',
@@ -16,10 +17,13 @@ export class GameComponent implements OnInit {
   public game: WmGame
   public user: WmUser
   public modalRef: BsModalRef
-  public readySent = false
+  public readySent: {[key: string]: boolean} = {}
   public currentRound = 0
   public currentState = ''
+  public gameOpt
   private socket
+
+  private counter = 0
 
   @ViewChild('userRole', { static: true }) userRole
   @ViewChild('runSheriffOrNot', { static: true }) runSheriffOrNot
@@ -31,24 +35,31 @@ export class GameComponent implements OnInit {
     ) { }
 
   ngOnInit() {
+    console.log(`counter = ${this.counter++}`)
+    if (this.counter > 1) throw new Error('double init')
+    this.user = this.rest.user
+    console.log('user from rest is ', this.user)
     this.getGame()
     this.getMyRole()
     this.socket = this.sio.socket
     this.socket.on('gameState', async (info: WmServerNotify) => {
       this.currentRound = info.round
       this.currentState = info.state
-      this.readySent = false
+      this.gameOpt = this.rest.gameOpt
+      var opt = this.gameOpt
+      console.log('game opt is ', opt)
       switch (info.state) {
         case 'nightStart':
+          console.log('Got nightStart signal')
           await this.playSound(['isNight', 'everyone', 'closeEyes'])
-          this.sendReady()
+          setTimeout(()=>{this.sendReady()}, 2000)
           break
         case 'guard':
           await this.playSound(['guard', 'openEyes'])
           await this.playSound(['guard', 'choose'])
           break
         case 'wolf':
-          await this.playSound(['guard', 'closeEyes'])
+          if (opt && opt.guard) await this.playSound(['guard', 'closeEyes'])
           await this.playSound(['wolves', 'openEyes'])
           await this.playSound(['wolves', 'choose'])
           break
@@ -61,28 +72,31 @@ export class GameComponent implements OnInit {
 
           break
         case 'prophet':
-          await this.playSound(['witch', 'closeEyes'])
+          if (opt && opt.witch) await this.playSound(['witch', 'closeEyes'])
           await this.playSound(['prophet', 'openEyes'])
           await this.playSound(['prophet', 'choose'])
           break
         case 'hunter':
-          await this.playSound(['prophet', 'closeEyes'])
+          if (opt && opt.prophet) await this.playSound(['prophet', 'closeEyes'])
           await this.playSound(['hunter', 'openEyes'])
           await this.playSound(['hunter', 'choose'])
           break
         case 'dayStart':
-          await this.playSound(['hunter', 'closeEyes'])
-          await this.playSound(['isDay', 'everyone', 'openEyes'])
+          if (opt && opt.hunter) await this.playSound(['hunter', 'closeEyes'])
+          await this.playSound(['isDay', 'everyone', 'openEyes', 'pleaseSpeak'])
           break
         case 'killVote':
-          await this.playSound(['hunter', 'closeEyes'])
-          await this.playSound(['isDay', 'everyone', 'openEyes'])
+          await this.playSound(['voteStart'])
           break
         case 'sheriff':
           console.log('sheriff died')
           break
         case 'roleCheck':
           console.log('Please check your role')
+          //this.openModal(this.userRole)
+          break
+        case 'sheriffNom':
+          await this.playSound(['voteSheriff'])
           break
         default:
           console.log(info)
@@ -92,13 +106,15 @@ export class GameComponent implements OnInit {
   }
 
   async playSound(seq) {
-    console.log('use rest service')
-    console.log(this.rest.user)
-    if (this.rest.user && this.rest.user.isOrganizer) {
-      await this.soundService.playSequence(seq)
-    } else {
+    if (!this.rest.user) {
       console.log('user is not ready')
+      return
     }
+    if (!this.rest.user.isOrganizer) {
+      console.log('user is not organizer')
+      return
+    }
+    await this.soundService.playSequence(seq)
   }
 
   handleError(error) {
@@ -134,10 +150,13 @@ export class GameComponent implements OnInit {
 
   sendReady() {
     if (this.modalRef) this.modalRef.hide()
-    if (this.readySent) return
-    this.http.post('/api/ready', {})
+    let key = `${this.currentRound}-${this.currentState}`
+    if (this.readySent[key]) return
+    this.readySent[key] = true
+    console.log(`send ready ${key}`)
+    console.log(this.readySent)
+    this.http.post('/api/ready', {for: key})
       .subscribe((result: WmServerResponse) => {
-        this.readySent = true
         if (!result.success) {
           console.log(result)
         }
@@ -161,7 +180,6 @@ export class GameComponent implements OnInit {
     let data = { vote: user.name }
     this.http.post('/api/vote/', data)
       .subscribe((result: WmServerResponse) => {
-        this.readySent = true
         if (!result.success) {
           console.log(result)
         } else {

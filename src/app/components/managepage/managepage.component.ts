@@ -115,9 +115,8 @@ export class ManagepageComponent implements OnInit {
           this.http.get('/api/myrole')
           .subscribe(myself => {
             this.myself = myself
+            this.rest.user = myself
           })
-          // save user info into rest service
-          this.rest.checkLogin()
         }
       },
       error => {
@@ -158,6 +157,7 @@ export class ManagepageComponent implements OnInit {
     )
   }
   startGame() {
+    this.rest.gameOpt = this.optForm.value
     this.http.post('/api/start', this.optForm.value).subscribe(res => {
       this.router.navigate(['/game'])
     },

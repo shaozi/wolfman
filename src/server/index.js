@@ -368,7 +368,7 @@ function playGame(game) {
             if(user.role === "hunter") user.hunterKilled = true
             if(user.sheriff) game.sheriffAlive = false
             game.lastKilled.push(user.name)
-            getUsers(game, "witch").lastAttacked = user.name
+            getUsers(game.users, "witch")[0].lastAttacked = user.name
           }
           break;
         case 'witchsave':
@@ -473,8 +473,12 @@ function vote(req, res) {
 /** Removes user from waiting list and runs next section if waiting for nobody
  */
 function ready(req, res) {
+  var info = req.body
+  var user = req.session.user
+  console.log(`READY: user : ${user}, info: ${JSON.stringify(info)} `)
   var game = findGame(req.session.game)
-  game.waiting.splice(game.waiting.indexOf(req.session.user), 1)
+  console.log(JSON.stringify(game.waiting))
+  game.waiting = game.waiting.filter(u => { return u.name !== req.session.user} )
   res.json({ success: true })
   if(game.waiting.length == 0) {
     game.ready = true

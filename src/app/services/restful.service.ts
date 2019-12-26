@@ -9,13 +9,6 @@ import { of } from 'rxjs';
 export class RestfulService {
 
   public user
+  public gameOpt
 
-  constructor(private http: HttpClient) { 
-  }
-
-  checkLogin() {
-    this.http.get('/api/myrole').subscribe(user=>{
-      this.user = user
-    })
-  }
 }
