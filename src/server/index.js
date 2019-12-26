@@ -485,11 +485,11 @@ function ready(req, res) {
   var game = findGame(req.session.game)
   //console.log(JSON.stringify(game.waiting))
   game.waiting = game.waiting.filter(u => { return u.name !== req.session.user} )
-  res.json({ success: true })
   if(game.waiting.length == 0) {
     game.ready = true
     playGame(game)
   }
+  res.json({ success: true })
 }
 
 function chat(req, res) {
