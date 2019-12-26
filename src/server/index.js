@@ -453,11 +453,11 @@ function vote(req, res) {
       }
       break
     case "witchsave":
-      if(lastAttacked === user.name && game.round !== 1) {
+      if(user.lastAttacked === user.name && game.round !== 1) {
         res.json({ success: false, message: "Can't save self"})
         return
       }
-      if(lastAttacked !== vote) {
+      if(user.lastAttacked !== vote) {
         res.json({ success: false, message: "Can't save person not killed by wolves"})
         return
       }
