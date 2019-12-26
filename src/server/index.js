@@ -325,11 +325,9 @@ function getUsers(users, state) {
     else if(user.role === check) { // Role Specific events
       // Check if hunter died
       if(state === "hunterdeath" && game.hunterKilled) return true
-      // Check if sheriff died
-      if(state === "sheriff" && !game.sheriffAlive) return true
       else if(check != "witch") return true
       return false
-    }
+    } else if(state === "sheriff" && user.sheriff && !game.sheriffAlive) return true // Check if sheriff died
   })
 }
 
