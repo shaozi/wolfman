@@ -17,7 +17,6 @@ export class GameComponent implements OnInit {
   public game: WmGame
   public user: WmUser
   public modalRef: BsModalRef
-  public readySent: {[key: string]: boolean} = {}
   public currentRound = 0
   public currentState = ''
   public gameOpt
@@ -64,12 +63,23 @@ export class GameComponent implements OnInit {
           await this.playSound(['wolves', 'choose'])
           break
         case 'witchsave':
+          this.getGame((game)=>{
+            console.log('get game witchsave', game)
+            this.getMyRole((user)=>{
+              console.log('get game get user witchsave', user)
+            })
+          })
           await this.playSound(['wolves', 'closeEyes'])
           await this.playSound(['witch', 'openEyes'])
           await this.playSound(['witch', 'choose'])
           break
         case 'witchkill':
-
+          this.getGame((game)=>{
+            console.log('get game witchkill', game)
+            this.getMyRole((user)=>{
+              console.log('get game get user witchkill', user)
+            })
+          })
           break
         case 'prophet':
           if (opt && opt.witch) await this.playSound(['witch', 'closeEyes'])
@@ -121,7 +131,7 @@ export class GameComponent implements OnInit {
     console.log(error)
   }
 
-  getGame() {
+  getGame(callback?: (game:WmGame) => void) {
     this.http.get(`/api/game`)
       .subscribe((game: WmGame) => {
         this.game = game
@@ -131,6 +141,9 @@ export class GameComponent implements OnInit {
         }
         this.currentState = game.roundState
         this.currentRound = game.round
+        if (callback) {
+          callback(game)
+        }
       },
         error => {
           this.router.navigate(['/'])
@@ -139,10 +152,13 @@ export class GameComponent implements OnInit {
       )
   }
 
-  getMyRole() {
+  getMyRole(callback?: (user: WmUser)=>void) {
     this.http.get(`/api/myrole`)
       .subscribe((user: WmUser) => {
         this.user = user
+        if (callback) {
+          callback(user)
+        }
       },
         error => this.handleError(error)
       )
@@ -150,11 +166,11 @@ export class GameComponent implements OnInit {
 
   sendReady() {
     if (this.modalRef) this.modalRef.hide()
-    let key = `${this.currentRound}-${this.currentState}`
-    if (this.readySent[key]) return
-    this.readySent[key] = true
+    let key = this.currentState
+    if (this.sio.readySent[key]) return
+    this.sio.readySent[key] = true
     console.log(`send ready ${key}`)
-    console.log(this.readySent)
+    console.log('readySent = ', this.sio.readySent)
     this.http.post('/api/ready', {for: key})
       .subscribe((result: WmServerResponse) => {
         if (!result.success) {
@@ -171,7 +187,7 @@ export class GameComponent implements OnInit {
     let allow = this.currentState === 'killVote' 
       || this.currentState.includes(this.user.role)
       || this.user.sheriff && this.currentState === 'sheriff'
-      || this.user.role === 'hunter' && this.currentState === 'hunterDeath'
+      || this.user.role === 'hunter' && this.currentState === 'hunterdeath'
     if (!allow) {
       console.log(this.currentState, this.currentRound, this.user)
       console.log('not allowed')

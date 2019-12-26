@@ -7,7 +7,9 @@ import { WmJoinRequest, WmServerResponse, WmCreateRequest, WmServerMessage } fro
 })
 export class SocketioService {
   public socket
-  constructor() { 
+  public readySent: {[key: string]: boolean} = {}
+  constructor() {
+    console.log('socket created')
     this.socket = io()
   }
 }
