@@ -100,9 +100,8 @@ function userJoinGame(username, gamename, socketId) {
     alive: true,
     poison: true,
     antidote: true,
-    sheriffVoteStatus: null,
+    sheriffRunning: false,
     sheriff: false,
-    canShoot: false, // for hunter
     protected: false,
     lastProtect: '',
     hunterKilled: '',
@@ -129,7 +128,7 @@ function getGameDetails(gamename) {
         name: u.name,
         isOrganizer: u.isOrganizer,
         alive: u.alive,
-        sheriffVoteStatus: u.sheriffVoteStatus,
+        sheriffRunning: u.sheriffRunning,
         sheriff: u.sheriff,
         revealedIdiot: u.revealedIdiot
       }
@@ -246,6 +245,7 @@ function createGame(req, res) {
       sheriffAlive: true,
       users: [], // username => user
       waiting: [], // users waiting for action
+      sheriffList: [],
       votes: {}, // username: votes
       ready: false
     }
@@ -271,7 +271,7 @@ function startGame(req, res) {
   if(assignRoles(game, req.body) === 0) res.json({ success: true })
   else res.json({ success: false, message: "Bad Role Settings" })
   game.waiting = getUsers(game.users, "nightStart")
-  io.on(game.name).emit("gameState", { type: "roleCheck" })
+  io.to(game.name).emit("gameState", { type: "roleCheck" })
 }
 
 function assignRoles(game, data) {
@@ -322,7 +322,10 @@ function getUsers(users, state) {
   check = (state === "hunterdeath") ? "hunter" : check
   return users.filter((user) => {
     if(!user.alive) return false // Dead don't participate in anything
-    if(check === "nightStart" || check === "dayStart" || check === "killVote") return true // Everyone participates in these events
+    if(check === "killvote" && user.revealedIdiot) return false
+    if(check === "sheriffvote" && user.sheriffRunning) return false
+    if(check === "nightStart" || check === "dayStart" ||
+       check === "killVote" || check === "sheriffnom" || check === "sheriffvote") return true // Everyone participates in these events
     else if(user.role === check) { // Role Specific events
       // Check if hunter died
       if(state === "hunterdeath" && game.hunterKilled) return true
@@ -339,7 +342,7 @@ function maxProp(obj) {
 function playGame(game) {
   // Waiting list should be empty when this starts
   let roundList = ['nightStart', 'guard', 'wolf', 'witchsave', 'witchkill',
-                   'prophet', 'hunter', 'dayStart', 'killVote', 'hunterdeath', 'sheriff']
+                   'prophet', 'hunter', 'sheriffnom', 'sheriffvote','dayStart', 'killVote', 'hunterdeath', 'sheriff']
   if(game.ready) {
     // Deal with votes and move on
     // Unless no votes
@@ -348,9 +351,14 @@ function playGame(game) {
       var user = findUserInGame(maxProp(game.votes), game.name) // Get max voted
       game.votes = [] // reset votes
       switch(game.roundState) {
+        case 'sheriffnom':
+          for(user in game.votes) findUserInGame(user, game.name).sheriffRunning = true
+          break
+        case 'sheriffvote':
         case 'dayStart': // Sheriff Vote
         case 'sheriff':
           user.sheriff == true;
+          break
         case 'guard':
           user.protected = true
           getUsers(game.users, 'guard')[0].lastProtect = maxProp(game.votes)
