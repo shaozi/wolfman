@@ -17,8 +17,9 @@ export interface WmUser {
 
 export interface WmGame {
   name: string,
-  status: number,
-  users: WmUser[]
+  round: number,
+  users: WmUser[],
+  roundState: string
 }
 
 export interface WmClientRequest {

@@ -29,8 +29,7 @@
 
   <div *ngIf="game">
     <div class="text-center">
-      <span *ngIf="game.status % 2 == 1">Day {{game.status / 2}}</span>
-      <span *ngIf="game.status % 2 == 0">Night {{(game.status - 1) / 2}}</span>
+      <span>Day {{game.round}}</span>
     </div>
 
     <div *ngIf="user">
@@ -41,7 +40,7 @@
       <div class="col-6 card shadow" *ngFor="let user of game.users">
         <div class="card-body">
           {{user.name}}
-          <button type="button" class="btn btn-outling-primary" [disabled]='readySent' (click)="sendVote(user.name)">Select</button> 
+          <button type="button" class="btn btn-outline-primary" [disabled]='readySent' (click)="sendVote(user)">Select</button> 
         </div>
       </div>
     </div>

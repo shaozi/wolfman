@@ -33,7 +33,7 @@ export class GameComponent implements OnInit {
     this.socket = this.sio.socket
     this.socket.on('gameState', async (info: WmServerNotify) => {
       this.currentRound = info.round
-
+      this.currentState = info.state
       this.readySent = false
       switch (info.state) {
         case 'nightStart':
@@ -75,15 +75,24 @@ export class GameComponent implements OnInit {
           await this.playSound(['hunter', 'closeEyes'])
           await this.playSound(['isDay', 'everyone', 'openEyes'])
           break
+        case 'sheriff':
+          console.log('sheriff died')
+          break
+        default:
+          window.alert(`${info.state} is not implemented!`)
       }
     })
   }
   async playSound(seq) {
-    if (this.user.isOrganizer) {
-      await this.soundService.playSequence(seq)
+    if (!this.user) {
+      setTimeout(() => {this.playSound(seq)}, 500)
+    } else {
+      if (this.user.isOrganizer) {
+        await this.soundService.playSequence(seq)
+      }
     }
   }
-  
+
   handleError(error) {
     console.log(error)
   }
@@ -92,11 +101,17 @@ export class GameComponent implements OnInit {
     this.http.get(`/api/game`)
       .subscribe((game: WmGame) => {
         this.game = game
-        if (game.status == -1) {
+        if (game.round == 0) {
           this.router.navigate(['/manage'])
+          return
         }
+        this.currentState = game.roundState
+        this.currentRound = game.round
       },
-        error => this.handleError(error)
+        error => {
+          this.router.navigate(['/'])
+          this.handleError(error)
+        }
       )
   }
 
@@ -104,7 +119,6 @@ export class GameComponent implements OnInit {
     this.http.get(`/api/myrole`)
       .subscribe((user: WmUser) => {
         this.user = user
-        //this.openModal(this.userRole)
       },
         error => this.handleError(error)
       )
@@ -125,14 +139,14 @@ export class GameComponent implements OnInit {
         })
   }
 
-  sendVote(username) {
+  sendVote(user) {
     let allow = this.currentState === 'killVote' || this.currentState.includes(this.user.role)
     if (!allow) {
       console.log(this.currentState, this.currentRound, this.user)
       console.log('not allowed')
       return
     }
-    let data = { vote: username }
+    let data = { vote: user.name }
     this.http.post('/api/vote/', data)
       .subscribe((result: WmServerResponse) => {
         this.readySent = true

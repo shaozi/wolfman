@@ -3,7 +3,7 @@
     <div class="col">
       <div>Welcome {{username}}</div>
       <label>Game's Name: </label>
-      <input class="form-control" [(ngModel)]="gamename">
+      <input class="form-control" [(ngModel)]="gamename" (keydown.enter)="join()">
       <button class="btn btn-success btn-block mt-1" [disabled]="!gamename" (click)="join()">Join</button>
       <button class="btn btn-primary btn-block mt-1" [disabled]="!gamename" (click)="create()">Start a New Game</button>
       <div *ngFor="let msg of messages">

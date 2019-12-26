@@ -85,7 +85,7 @@ export class ManagepageComponent implements OnInit {
     this.http.get(`/api/game`)
       .subscribe((game : WmGame) => {
         this.game = game
-        if (game.status > 0)  {
+        if (game.round > 0)  {
           this.router.navigate(['/game'])
         }
       },
