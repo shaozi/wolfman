@@ -5,6 +5,7 @@ import { WmGame, WmUser, WmClientReponse, WmServerResponse, WmServerNotify } fro
 import { Router } from '@angular/router';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { SoundService } from 'src/app/services/sound.service';
+import { RestfulService } from 'src/app/services/restful.service';
 
 @Component({
   selector: 'app-game',
@@ -25,7 +26,9 @@ export class GameComponent implements OnInit {
 
   constructor(private http: HttpClient, private sio: SocketioService, private router: Router,
     private modalService: BsModalService,
-    private soundService: SoundService) { }
+    private soundService: SoundService,
+    private rest: RestfulService
+    ) { }
 
   ngOnInit() {
     this.getGame()
@@ -55,7 +58,7 @@ export class GameComponent implements OnInit {
           await this.playSound(['witch', 'choose'])
           break
         case 'witchkill':
-          
+
           break
         case 'prophet':
           await this.playSound(['witch', 'closeEyes'])
@@ -83,13 +86,14 @@ export class GameComponent implements OnInit {
       }
     })
   }
+
   async playSound(seq) {
-    if (!this.user) {
-      setTimeout(() => {this.playSound(seq)}, 500)
+    console.log('use rest service')
+    console.log(this.rest.user)
+    if (this.rest.user && this.rest.user.isOrganizer) {
+      await this.soundService.playSequence(seq)
     } else {
-      if (this.user.isOrganizer) {
-        await this.soundService.playSequence(seq)
-      }
+      console.log('user is not ready')
     }
   }
 

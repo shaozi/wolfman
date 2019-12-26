@@ -7,6 +7,7 @@ import { SoundService } from 'src/app/services/sound.service';
 import { Router } from '@angular/router';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { FormBuilder, FormGroup } from '@angular/forms'
+import { RestfulService } from 'src/app/services/restful.service';
 
 @Component({
   selector: 'app-managepage',
@@ -34,7 +35,9 @@ export class ManagepageComponent implements OnInit {
     private soundService: SoundService,
     private router: Router,
     private modalService: BsModalService,
-    private fb: FormBuilder) {
+    private fb: FormBuilder,
+    private rest: RestfulService
+    ) {
   }
 
   ngOnInit() {
@@ -113,6 +116,8 @@ export class ManagepageComponent implements OnInit {
           .subscribe(myself => {
             this.myself = myself
           })
+          // save user info into rest service
+          this.rest.checkLogin()
         }
       },
       error => {

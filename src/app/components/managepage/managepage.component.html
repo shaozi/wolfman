@@ -79,7 +79,7 @@
           <label class="btn btn-primary" [class.active]="optForm.value.idiot" formControlName="idiot" btnCheckbox
             tabindex="0" role="button">白痴</label></div>
       </div>
-      <button type="button" class="btn btn-success btn-block mt-5" [disabled]="game && game.users.length < 1" (click)="startGame()">Start
+      <button id="start" type="button" class="btn btn-success btn-block mt-5" [disabled]="game && game.users.length < 1" (click)="startGame()">Start
         Game</button>
     </form>
     {{optForm.value | json}}
