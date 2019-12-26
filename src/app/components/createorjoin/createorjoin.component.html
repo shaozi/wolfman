@@ -3,9 +3,9 @@
     <div class="col">
       <div>Welcome {{username}}</div>
       <label>Game's Name: </label>
-      <input class="form-control" [(ngModel)]="gamename" (keydown.enter)="join()">
-      <button class="btn btn-success btn-block mt-1" [disabled]="!gamename" (click)="join()">Join</button>
-      <button class="btn btn-primary btn-block mt-1" [disabled]="!gamename" (click)="create()">Start a New Game</button>
+      <input id="gamename" class="form-control" [(ngModel)]="gamename" (keydown.enter)="join()">
+      <button id="join" class="btn btn-success btn-block mt-1" [disabled]="!gamename" (click)="join()">Join</button>
+      <button id="create" class="btn btn-primary btn-block mt-1" [disabled]="!gamename" (click)="create()">Start a New Game</button>
       <div *ngFor="let msg of messages">
         <span class="badge"
           [ngClass]="{'badge-danger': msg.type=='error', 'badge-info': msg.type=='chat', 'badge-warning': msg.type=='warning'}">

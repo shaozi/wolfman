@@ -8,9 +8,14 @@ import { of } from 'rxjs';
 })
 export class RestfulService {
 
-  constructor(private http: HttpClient) { }
+  public user
+
+  constructor(private http: HttpClient) { 
+  }
 
   checkLogin() {
-    return this.http.get('/api/me')
+    this.http.get('/api/myrole').subscribe(user=>{
+      this.user = user
+    })
   }
 }
