@@ -326,12 +326,11 @@ function getUsers(users, state) {
     if(check === "sheriffVote" && user.sheriffRunning) return false
     if(check === "nightStart" || check === "dayStart" ||
        check === "killVote" || check === "sheriffNom" || check === "sheriffVote") return true // Everyone participates in these events
-    else if(user.role === check) { // Role Specific events
+    if(user.role === check) { // Role Specific events
       // Check if hunter died
       if(state === "hunterdeath" && game.hunterKilled) return true
-      else if(check != "witch") return true
       return false
-    } else if(state === "sheriff" && user.sheriff && !game.sheriffAlive) return true // Check if sheriff died
+    } if(state === "sheriff" && user.sheriff && !game.sheriffAlive) return true // Check if sheriff died
   })
 }
 
