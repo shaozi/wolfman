@@ -63,12 +63,14 @@ export class GameComponent implements OnInit {
           await this.playSound(['wolves', 'choose'])
           break
         case 'witchsave':
-          this.getGame((game)=>{
-            console.log('get game witchsave', game)
-            this.getMyRole((user)=>{
-              console.log('get game get user witchsave', user)
+          if (this.user.role == 'witch') {
+            this.getGame((game)=>{
+              console.log('get game witchsave', game)
+              this.getMyRole((user)=>{
+                console.log('get game get user witchsave', user)
+              })
             })
-          })
+          }
           await this.playSound(['wolves', 'closeEyes'])
           await this.playSound(['witch', 'openEyes'])
           await this.playSound(['witch', 'choose'])
