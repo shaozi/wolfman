@@ -33,7 +33,7 @@ let lanuchUser = async (username) => {
     await page.waitFor('#roleready')
     await page.$eval('#roleready', ele=>ele.click())
   }
-  
+
 
   //await browser.close();
 }
@@ -44,10 +44,10 @@ let lanuchUser = async (username) => {
     'user 2',
     'user 3',
     'user 4',
-    'user 5',
-    'user 6',
-    'user 7',
-    'user 8'
+    // 'user 5',
+    // 'user 6',
+    // 'user 7',
+    // 'user 8'
   ]
   users.forEach(async username => {
     await lanuchUser(username)
