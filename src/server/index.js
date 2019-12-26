@@ -323,15 +323,14 @@ function getUsers(users, state) {
   check = (state === "hunterdeath") ? "hunter" : check
   return users.filter((user) => {
     if(!user.alive) return false // Dead don't participate in anything
-    if(check === "killVote" && user.revealedIdiot) return false
-    if(check === "sheriffVote" && user.sheriffRunning) return false
+    if(check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
+    if(check === "sheriffVote" && !user.sheriffRunning) return false // Sheriff votes only people who aren't running
     if(check === "nightStart" || check === "dayStart" ||
        check === "killVote" || check === "sheriffNom" || check === "sheriffVote") return true // Everyone participates in these events
-    if(user.role === check) { // Role Specific events
-      // Check if hunter died
-      if(state === "hunterdeath" && game.hunterKilled) return true
-      return false
-    } if(state === "sheriff" && user.sheriff && !game.sheriffAlive) return true // Check if sheriff died
+    if(user.role === "hunter" && state === "hunterdeath" && game.hunterKilled) return true // Check if hunter died
+    if(user.role === check) return true // Get by role
+    if(state === "sheriff" && user.sheriff && !game.sheriffAlive) return true // Check if sheriff died
+    return false
   })
 }
 
