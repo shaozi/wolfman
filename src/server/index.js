@@ -397,6 +397,9 @@ function playGame(game) {
             } else game.voteKilled = user.name
           } else game.lastKilled.push(user.name)
       }
+      if(checkEnd(game)) {
+        io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
+      }
       game.votes = {} // reset votes
     }
     if(game.roundState === "roleCheck")
@@ -411,6 +414,9 @@ function playGame(game) {
         findUserInGame(user, game.name).alive = false
       }
     }
+    if(checkEnd(game)) {
+      io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
+    }
     game.waiting = getUsers(game.users, game.roundState) // Get users for this round
     if(game.waiting.length === 0) { // Nobody needs to go OR its the last hunter round and hunter didn't die
       // Skip this round
@@ -420,11 +426,7 @@ function playGame(game) {
       playGame(game) // Go to next stage
     } else {
       console.log(game.roundState)
-      if(game.roundState == "killVote" && checkEnd(game)) {
-        io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
-      } else {
-        io.to(game.name).emit("gameState", { state: game.roundState, round: game.round })
-      }
+      io.to(game.name).emit("gameState", { state: game.roundState, round: game.round })
     }
   }
 }
