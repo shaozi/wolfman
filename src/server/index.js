@@ -320,16 +320,16 @@ function shuffle(array) {
 
 function getUsers(users, state) {
   var check = ((state === "witchsave") || (state === "witchkill")) ? "witch" : state
-  check = (state === "hunterdeath") ? "hunter" : check
+  check = ((state === "hunterdeath") || (state === "hunterdeath2")) ? "hunter" : check
+  check = ((state === "sheriffdeath") || (state === "sheriffdeath2")) ? "sheriff" : check
   return users.filter((user) => {
     if(!user.alive) return false // Dead don't participate in anything
     if(check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
     if(check === "sheriffVote" && !user.sheriffRunning) return false // Sheriff votes only people who aren't running
-    if(check === "nightStart" || check === "dayStart" ||
-       check === "killVote" || check === "sheriffNom" || check === "sheriffVote") return true // Everyone participates in these events
-    if(user.role === "hunter" && state === "hunterdeath" && game.hunterKilled) return true // Check if hunter died
+    if(check === "nightStart" || check === "killVote" || check === "sheriffNom" || check === "sheriffVote") return true // Everyone participates in these events
+    if(user.role === "hunter" && check === "hunter" && game.hunterKilled) return true // Check if hunter died
     if(user.role === check) return true // Get by role
-    if(state === "sheriff" && user.sheriff && !game.sheriffAlive) return true // Check if sheriff died
+    if(check === "sheriff" && user.sheriff && !game.sheriffAlive) return true // Check if sheriff died
     return false
   })
 }
@@ -341,7 +341,7 @@ function maxProp(obj) {
 function playGame(game) {
   // Waiting list should be empty when this starts
   let roundList = ['nightStart', 'guard', 'wolf', 'witchsave', 'witchkill',
-    'prophet', 'hunter', 'sheriffNom', 'sheriffVote', 'dayStart', 'killVote', 'hunterdeath', 'sheriff']
+    'prophet', 'hunter', 'sheriffNom', 'sheriffVote', 'hunterdeath', 'sheriffdeath', 'killVote', 'hunterdeath2', 'sheriffdeath2']
   if (game.ready) {
     // Deal with votes and move on
     // Unless no votes
@@ -356,8 +356,8 @@ function playGame(game) {
           for(user in game.votes) findUserInGame(user, game.name).sheriffRunning = true
           break
         case 'sheriffVote':
-        case 'dayStart': // Sheriff Vote
-        case 'sheriff':
+        case 'sheriffdeath':
+        case 'sheriffdeath2':
           user.sheriff == true;
           break
         case 'guard':
@@ -384,9 +384,9 @@ function playGame(game) {
           break;
         case 'witchkill':
           getUsers(game.users, 'witch')[0].poison = false
-        case 'hunter':
+        case 'hunterdeath':
+        case 'hunterdeath2':
         case 'killVote':
-        case 'hunterDeath':
           if(user.role === "hunter") user.hunterKilled = true
           if(user.sheriff) game.sheriffAlive = false
           user.alive = false
@@ -414,7 +414,7 @@ function playGame(game) {
       playGame(game) // Go to next stage
     } else {
       console.log(game.roundState)
-      if(game.roundState == "dayStart" && checkEnd(game)) {
+      if(game.roundState == "killVote" && checkEnd(game)) {
         io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
       } else {
         io.to(game.name).emit("gameState", { state: game.roundState, round: game.round })
