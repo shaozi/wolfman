@@ -326,10 +326,10 @@ function getUsers(users, state) {
     if(!user.alive) return false // Dead don't participate in anything
     if(check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
     if(check === "sheriffVote" && !user.sheriffRunning) return true // Sheriff votes only people who aren't running
-    if(check === "nightStart" || check === "killVote" || check === "sheriffNom" || check === "sheriffVote") return true // Everyone participates in these events
+    if(check === "nightStart" || check === "killVote" || check === "sheriffNom") return true // Everyone participates in these events
     if(user.role === "hunter" && check === "hunter" && game.hunterKilled) return true // Check if hunter died
     if(user.role === check) return true // Get by role
-    if(check === "sheriff" && user.sheriff && !game.sheriffAlive) return true // Check if sheriff died
+    if(check === "sheriff" && user.sheriff && !user.alive) return true // Check if sheriff died
     return false
   })
 }
@@ -381,16 +381,18 @@ function playGame(game) {
           }
           getUsers(game.users, 'witch')[0].antidote = false
           break;
-        case 'witchkill':
-          getUsers(game.users, 'witch')[0].poison = false
         case 'hunterdeath':
         case 'hunterdeath2':
         case 'killVote':
+          user.alive = false
+        case 'witchkill': // this happens before death checking so should be in lastKilled and not directly set
+          getUsers(game.users, 'witch')[0].poison = false
           if(user.role === "hunter") user.hunterKilled = true
           if(user.sheriff) game.sheriffAlive = false
           if(game.roundState === 'killVote') {
             if(user.role == "idiot") {
               user.revealedIdiot = true
+              user.alive = true
             } else game.voteKilled = user.name
           } else game.lastKilled.push(user.name)
       }
