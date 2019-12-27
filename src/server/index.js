@@ -325,7 +325,7 @@ function getUsers(users, state) {
   return users.filter((user) => {
     if(!user.alive) return false // Dead don't participate in anything
     if(check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
-    if(check === "sheriffVote" && !user.sheriffRunning) return false // Sheriff votes only people who aren't running
+    if(check === "sheriffVote" && user.sheriffRunning) return true // Sheriff votes only people who aren't running
     if(check === "nightStart" || check === "killVote" || check === "sheriffNom" || check === "sheriffVote") return true // Everyone participates in these events
     if(user.role === "hunter" && check === "hunter" && game.hunterKilled) return true // Check if hunter died
     if(user.role === check) return true // Get by role
@@ -405,6 +405,11 @@ function playGame(game) {
     game.ready = false
     playGame(game) // Go to next stage
   } else {
+    if(game.roundState === "hunterdeath") { // Kill at the beginning of the day before getting users
+      for(user of game.lastKilled) {
+        findUserInGame(user, game.name).alive = false
+      }
+    }
     game.waiting = getUsers(game.users, game.roundState) // Get users for this round
     if(game.waiting.length === 0) { // Nobody needs to go OR its the last hunter round and hunter didn't die
       // Skip this round
