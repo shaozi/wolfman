@@ -406,6 +406,7 @@ function playGame(game) {
       game.roundState = "nightStart"
     else
       game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1]
+      game.round++
     game.ready = false
     playGame(game) // Go to next stage
   } else {
@@ -422,6 +423,7 @@ function playGame(game) {
       // Skip this round
       console.log(`skip round ${game.roundState}`)
       game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1]
+      game.round++
       game.ready = false
       playGame(game) // Go to next stage
     } else {
