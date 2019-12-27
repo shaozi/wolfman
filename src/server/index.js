@@ -389,13 +389,11 @@ function playGame(game) {
         case 'killVote':
           if(user.role === "hunter") user.hunterKilled = true
           if(user.sheriff) game.sheriffAlive = false
-          user.alive = false
           if(game.roundState === 'killVote') {
             if(user.role == "idiot") {
               user.revealedIdiot = true
             } else game.voteKilled = user.name
-          }
-          else game.lastKilled.push(user.name)
+          } else game.lastKilled.push(user.name)
       }
     }
     if(game.roundState === "roleCheck")
