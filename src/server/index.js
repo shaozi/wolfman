@@ -346,7 +346,7 @@ function playGame(game) {
     // Deal with votes and move on
     // Unless no votes
     game.sheriffAlive = true
-    console.log("Votes: " + game.votes)
+    console.log("Votes: " + JSON.stringify(game.votes))
     if(Object.keys(game.votes).length > 0) {
       var user = findUserInGame(maxProp(game.votes), game.name) // Get max voted
       game.votes = {} // reset votes
