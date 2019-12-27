@@ -19,7 +19,9 @@ export class GameComponent implements OnInit {
   public modalRef: BsModalRef
   public currentRound = 0
   public currentState = ''
+  public revealedRole = ''
   public gameOpt
+  public message = ''
   private socket
 
   private counter = 0
@@ -28,7 +30,9 @@ export class GameComponent implements OnInit {
   @ViewChild('runSheriffOrNot', { static: true }) runSheriffOrNot
   @ViewChild('saveOrNot', { static: false }) saveOrNot
   @ViewChild('poisonOrNot', { static: true }) poisonOrNot
-
+  @ViewChild('passBadgeOrNot', { static: true }) passBadgeOrNot: TemplateRef<any>
+  @ViewChild('checkRole', { static: true }) checkRole: TemplateRef<any>
+  
   constructor(private http: HttpClient, private sio: SocketioService, private router: Router,
     private modalService: BsModalService,
     private soundService: SoundService,
@@ -50,84 +54,94 @@ export class GameComponent implements OnInit {
     this.getMyRole()
     this.socket = this.sio.socket
     this.socket.on('gameState', async (info: WmServerNotify) => {
+
       this.currentRound = info.round
       this.currentState = info.state
       this.gameOpt = this.rest.gameOpt
       var opt = this.gameOpt
-      console.log('game opt is ', opt)
-      switch (info.state) {
-        case 'nightStart':
-          console.log('Got nightStart signal')
-          await this.playSound(['isNight', 'everyone', 'closeEyes'])
-          setTimeout(() => { this.sendReady() }, 2000)
-          break
-        case 'guard':
-          await this.playSound(['guard', 'openEyes'])
-          await this.playSound(['guard', 'choose'])
-          break
-        case 'wolf':
-          if (opt && opt.guard) await this.playSound(['guard', 'closeEyes'])
-          await this.playSound(['wolves', 'openEyes'])
-          await this.playSound(['wolves', 'choose'])
-          break
-        case 'witchsave':
-          //if (this.user.role == 'witch') {
-          this.getGame((game) => {
-            console.log('get game witchsave', game)
-            this.getMyRole((user) => {
-              console.log('get game get user witchsave', user)
-            })
-          })
-          //}
-          await this.playSound(['wolves', 'closeEyes'])
-          await this.playSound(['witch', 'openEyes'])
-          await this.playSound(['witch', 'choose'], () => {
-            if (this.user.role == 'witch')
-              this.openModal(this.saveOrNot)
-          })
-          break
-        case 'witchkill':
-          this.getGame((game) => {
-            console.log('get game witchkill', game)
-            this.getMyRole((user) => {
-              console.log('get game get user witchkill', user)
-              if (this.user.role == 'witch')
-                this.openModal(this.poisonOrNot)
-            })
-          })
-          break
-        case 'prophet':
-          if (opt && opt.witch) await this.playSound(['witch', 'closeEyes'])
-          await this.playSound(['prophet', 'openEyes'])
-          await this.playSound(['prophet', 'choose'])
-          break
-        case 'hunter':
-          if (opt && opt.prophet) await this.playSound(['prophet', 'closeEyes'])
-          await this.playSound(['hunter', 'openEyes'])
-          await this.playSound(['hunter', 'choose'])
-          break
-        case 'dayStart':
-          if (opt && opt.hunter) await this.playSound(['hunter', 'closeEyes'])
-          await this.playSound(['isDay', 'everyone', 'openEyes', 'everyone', 'pleaseSpeak'])
-          break
-        case 'killVote':
-          await this.playSound(['voteStart'])
-          break
-        case 'sheriff':
-          console.log('sheriff died')
-          break
-        case 'roleCheck':
-          console.log('Please check your role')
-          //this.openModal(this.userRole)
-          break
-        case 'sheriffNom':
-          await this.playSound(['voteSheriff'])
-          this.openModal(this.runSheriffOrNot)
-          break
-        default:
-          console.log(info)
-          window.alert(`socket info state ${info.state} is not implemented!`)
-      }
+
+      this.getGame((game) => {
+        console.log(`get game ${JSON.stringify(info)}`, game)
+        this.getMyRole(async (user) => {
+          console.log(`get game ${JSON.stringify(info)}`, user)
+
+          console.log('game opt is ', opt)
+          switch (info.state) {
+            case 'nightStart':
+              this.sio.readySent = {}
+              console.log('Got nightStart signal')
+              await this.playSound(['isNight', 'everyone', 'closeEyes'])
+              setTimeout(() => { this.sendReady() }, 2000)
+              break
+            case 'guard':
+              await this.playSound(['guard', 'openEyes'])
+              await this.playSound(['guard', 'choose'])
+              break
+            case 'wolf':
+              if (opt && opt.guard) await this.playSound(['guard', 'closeEyes'])
+              await this.playSound(['wolves', 'openEyes'])
+              await this.playSound(['wolves', 'choose'])
+              break
+            case 'witchsave':
+              await this.playSound(['wolves', 'closeEyes'])
+              await this.playSound(['witch', 'openEyes'])
+              await this.playSound(['witch', 'choose'])
+              setTimeout(() => {
+                if (this.user.role == 'witch')
+                  this.openModal(this.saveOrNot)
+              }, 2000)
+              break
+            case 'witchkill':
+              setTimeout(() => {
+                if (this.user.role == 'witch')
+                  this.openModal(this.poisonOrNot)
+              }, 2000)
+              break
+            case 'prophet':
+              if (opt && opt.witch) await this.playSound(['witch', 'closeEyes'])
+              await this.playSound(['prophet', 'openEyes'])
+              await this.playSound(['prophet', 'choose'])
+              break
+            case 'hunter':
+              if (opt && opt.prophet) await this.playSound(['prophet', 'closeEyes'])
+              await this.playSound(['hunter', 'openEyes'])
+              await this.playSound(['hunter', 'choose'])
+              break
+            case 'dayStart':
+              if (opt && opt.hunter) await this.playSound(['hunter', 'closeEyes'])
+              await this.playSound(['isDay', 'everyone', 'openEyes', 'everyone', 'pleaseSpeak'])
+              break
+            case 'killVote':
+              await this.playSound(['voteStart'])
+              break
+            case 'sheriff':
+              await this.playSound(['voteSheriff'])
+              setTimeout(() => {
+                if (this.user.sheriff)
+                  this.openModal(this.passBadgeOrNot)
+              }, 2000)
+              console.log('sheriff died')
+              break
+            case 'roleCheck':
+              console.log('Please check your role')
+              //this.openModal(this.userRole)
+              break
+            case 'sheriffNom':
+              await this.playSound(['voteSheriff'])
+              this.openModal(this.runSheriffOrNot)
+              break
+            case 'sheriffVote':
+                await this.playSound(['everyone', 'voteSheriff', 'voteStart'])
+              break
+              
+            default:
+              console.log(info)
+              window.alert(`socket info state ${info.state} is not implemented!`)
+          }
+        })
+      })
+
+
     })
   }
 
@@ -204,16 +218,13 @@ export class GameComponent implements OnInit {
   }
 
   sendVote(username: string) {
-    if (!this.user.alive) {
-      console.log('already dead')
-      return
-    }
     if (this.modalRef) {
       this.modalRef.hide()
     }
     let allow = this.user.alive && (
       this.currentState === 'killVote'
       || this.currentState === 'sheriffNom'
+      || this.currentState === 'sheriffVote' // && !this.user.sheriffRunning
       || this.currentState.includes(this.user.role)
     )
 
@@ -230,7 +241,9 @@ export class GameComponent implements OnInit {
           console.log(result)
         } else {
           if ('wolf' in result) {
-            window.alert(result.wolf ? '狼人' : '平民')
+            this.revealedRole = (result.wolf ? '狼人' : '平民')
+            //this.openModal(this.checkRole)
+            this.message = `${username} 是一个 ${result.wolf ? '狼人' : '平民'}!!`
           }
           this.sendReady()
         }

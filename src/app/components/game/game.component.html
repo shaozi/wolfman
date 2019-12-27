@@ -1,5 +1,22 @@
 <div class="container">
 
+  <ng-template #checkRole>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">预言家</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendReady()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {{this.revealedRole}}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">OK</button>
+      </div>
+    </div>
+  </ng-template>
+
   <ng-template #runSheriffOrNot>
     <div class="modal-content">
       <div class="modal-header">
@@ -17,6 +34,29 @@
       </div>
     </div>
   </ng-template>
+
+  <ng-template #passBadgeOrNot>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">警徽</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendReady()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        你要传递警徽吗？
+        <div>
+          <button type="button" class="btn btn-outline-primary m-3" *ngFor="let user of game.users" (click)="sendVote(user.name)" >
+            {{user.name}}
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">不要</button>
+      </div>
+    </div>
+  </ng-template>
+
 
   <ng-template #userRole>
     <div class="modal-content">
@@ -94,12 +134,15 @@
       <div class="col-6 card shadow" *ngFor="let user of game.users">
         <div class="card-body">
           {{user.name}}
-          <span *ngIf="user.sheriff">(S)</span>
-          <span *ngIf="!user.alive">(D)</span>  
+          <span *ngIf="user.isOrganizer">🚦</span>
+          <span *ngIf="user.sheriffRunning">✋</span>
+          <span *ngIf="user.sheriff">🚔</span>
+          <span *ngIf="!user.alive">😵</span>  
           <button type="button" class="btn btn-outline-primary" (click)="sendVote(user.name)">Select</button> 
         </div>
       </div>
     </div>
+    <div>{{message}}</div>
     <pre>
 user:      {{user | json}}
 
