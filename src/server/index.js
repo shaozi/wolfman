@@ -353,7 +353,7 @@ function playGame(game) {
       console.log(game.roundState + ": Voted " + user.name)
       switch(game.roundState) {
         case 'sheriffNom':
-          for(user in game.votes) findUserInGame(user, game.name).sheriffRunning = true
+          for(u in game.votes) findUserInGame(u, game.name).sheriffRunning = true
           break
         case 'sheriffVote':
         case 'sheriffdeath':
