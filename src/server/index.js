@@ -325,7 +325,7 @@ function getUsers(users, state) {
   return users.filter((user) => {
     if(!user.alive) return false // Dead don't participate in anything
     if(check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
-    if(check === "sheriffVote" && user.sheriffRunning) return true // Sheriff votes only people who aren't running
+    if(check === "sheriffVote" && !user.sheriffRunning) return true // Sheriff votes only people who aren't running
     if(check === "nightStart" || check === "killVote" || check === "sheriffNom" || check === "sheriffVote") return true // Everyone participates in these events
     if(user.role === "hunter" && check === "hunter" && game.hunterKilled) return true // Check if hunter died
     if(user.role === check) return true // Get by role
@@ -357,7 +357,7 @@ function playGame(game) {
         case 'sheriffVote':
         case 'sheriffdeath':
         case 'sheriffdeath2':
-          user.sheriff == true;
+          user.sheriff = true;
           break
         case 'guard':
           getUsers(game.users, 'guard')[0].protect = user.name
