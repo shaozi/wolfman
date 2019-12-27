@@ -349,11 +349,10 @@ function playGame(game) {
     console.log("Votes: " + game.votes)
     if(Object.keys(game.votes).length > 0) {
       var user = findUserInGame(maxProp(game.votes), game.name) // Get max voted
-      game.votes = {} // reset votes
       console.log(game.roundState + ": Voted " + user.name)
       switch(game.roundState) {
         case 'sheriffNom':
-          for(u in game.votes) findUserInGame(u, game.name).sheriffRunning = true
+          for(u of Object.keys(game.votes)) findUserInGame(u, game.name).sheriffRunning = true
           break
         case 'sheriffVote':
         case 'sheriffdeath':
@@ -395,6 +394,7 @@ function playGame(game) {
             } else game.voteKilled = user.name
           } else game.lastKilled.push(user.name)
       }
+      game.votes = {} // reset votes
     }
     if(game.roundState === "roleCheck")
       game.roundState = "nightStart"
