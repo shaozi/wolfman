@@ -405,6 +405,11 @@ function playGame(game) {
     game.ready = false
     playGame(game) // Go to next stage
   } else {
+    if(game.roundState === "hunterdeath") { // Kill at the beginning of the day before getting users
+      for(user of game.lastKilled) {
+        findUserInGame(user, game.name).alive = false
+      }
+    }
     game.waiting = getUsers(game.users, game.roundState) // Get users for this round
     if(game.waiting.length === 0) { // Nobody needs to go OR its the last hunter round and hunter didn't die
       // Skip this round
