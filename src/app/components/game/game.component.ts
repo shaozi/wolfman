@@ -31,7 +31,9 @@ export class GameComponent implements OnInit {
   @ViewChild('poisonOrNot', { static: true }) poisonOrNot
   @ViewChild('passBadgeOrNot', { static: true }) passBadgeOrNot: TemplateRef<any>
 
-  constructor(private http: HttpClient, private sio: SocketioService, private router: Router,
+  constructor(private http: HttpClient,
+    public sio: SocketioService,
+    private router: Router,
     private modalService: BsModalService,
     private soundService: SoundService
   ) { }
@@ -249,14 +251,14 @@ export class GameComponent implements OnInit {
         } else {
           if ('wolf' in result) {
             this.setAutoDismissMessage(`${username}的身份是个${result.wolf ? '狼人' : '平民'}!!`)
-            setTimeout(()=>{
+            setTimeout(() => {
               this.sendReady()
             }, 2000)
           } else {
             this.setAutoDismissMessage(`你选了${username}`)
             this.sendReady()
           }
-          
+
           this.game.users.forEach(user => {
             user.selected = user.name == username
           })
@@ -271,14 +273,14 @@ export class GameComponent implements OnInit {
   setAutoDismissMessage(message: string, timeout?: number) {
     timeout = timeout || 5000
     this.messages.push(message)
-    setTimeout(()=>{
+    setTimeout(() => {
       let index = this.messages.indexOf(message)
       if (index != -1) {
         this.messages.splice(index, 1)
       }
     }, timeout)
   }
-  
+
   openModal(template: TemplateRef<any>) {
     this.modalRef = this.modalService.show(template, { class: 'modal-sm', backdrop: 'static' })
   }
