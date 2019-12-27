@@ -381,16 +381,18 @@ function playGame(game) {
           }
           getUsers(game.users, 'witch')[0].antidote = false
           break;
-        case 'witchkill':
-          getUsers(game.users, 'witch')[0].poison = false
         case 'hunterdeath':
         case 'hunterdeath2':
         case 'killVote':
+          user.alive = false
+        case 'witchkill': // this happens before death checking so should be in lastKilled and not directly set
+          getUsers(game.users, 'witch')[0].poison = false
           if(user.role === "hunter") user.hunterKilled = true
           if(user.sheriff) game.sheriffAlive = false
           if(game.roundState === 'killVote') {
             if(user.role == "idiot") {
               user.revealedIdiot = true
+              user.alive = true
             } else game.voteKilled = user.name
           } else game.lastKilled.push(user.name)
       }
