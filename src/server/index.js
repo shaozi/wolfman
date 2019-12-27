@@ -357,7 +357,7 @@ function playGame(game) {
         case 'sheriffVote':
         case 'sheriffdeath':
         case 'sheriffdeath2':
-          user.sheriff == true;
+          user.sheriff = true;
           break
         case 'guard':
           getUsers(game.users, 'guard')[0].protect = user.name
