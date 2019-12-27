@@ -20,8 +20,7 @@ export class GameComponent implements OnInit {
   public currentRound = 0
   public currentState = ''
   public revealedRole = ''
-  public gameOpt
-  public message = ''
+  public messages = []
   private socket
 
   private counter = 0
@@ -31,12 +30,10 @@ export class GameComponent implements OnInit {
   @ViewChild('saveOrNot', { static: false }) saveOrNot
   @ViewChild('poisonOrNot', { static: true }) poisonOrNot
   @ViewChild('passBadgeOrNot', { static: true }) passBadgeOrNot: TemplateRef<any>
-  @ViewChild('checkRole', { static: true }) checkRole: TemplateRef<any>
-  
+
   constructor(private http: HttpClient, private sio: SocketioService, private router: Router,
     private modalService: BsModalService,
-    private soundService: SoundService,
-    private rest: RestfulService
+    private soundService: SoundService
   ) { }
 
   ngOnInit() {
@@ -48,27 +45,28 @@ export class GameComponent implements OnInit {
       }
     })
     if (this.counter > 1) throw new Error('double init')
-    this.user = this.rest.user
-    console.log('user from rest is ', this.user)
+    this.user = this.sio.user
+    let opt = this.sio.gameOptions
+    console.log('saved game status is: ', this.sio.gameStatus)
+    console.log('saved user is ', this.user)
     this.getGame()
     this.getMyRole()
     this.socket = this.sio.socket
     this.socket.on('gameState', async (info: WmServerNotify) => {
-
+      this.sio.gameStatus = { state: info.state, message: '' }
       this.currentRound = info.round
       this.currentState = info.state
-      this.gameOpt = this.rest.gameOpt
-      var opt = this.gameOpt
+
+      //var opt = this.gameOpt
 
       this.getGame((game) => {
         console.log(`get game ${JSON.stringify(info)}`, game)
         this.getMyRole(async (user) => {
           console.log(`get game ${JSON.stringify(info)}`, user)
 
-          console.log('game opt is ', opt)
+          console.log('game opt is ', this.sio.gameOptions)
           switch (info.state) {
             case 'nightStart':
-              this.sio.readySent = {}
               console.log('Got nightStart signal')
               await this.playSound(['isNight', 'everyone', 'closeEyes'])
               setTimeout(() => { this.sendReady() }, 2000)
@@ -112,7 +110,7 @@ export class GameComponent implements OnInit {
               await this.playSound(['isDay', 'everyone', 'openEyes', 'everyone', 'pleaseSpeak'])
               break
             case 'killVote':
-              await this.playSound(['voteStart'])
+              await this.playSound(['everyone', 'pleaseSpeak'])
               break
             case 'sheriff':
               await this.playSound(['voteSheriff'])
@@ -131,9 +129,9 @@ export class GameComponent implements OnInit {
               this.openModal(this.runSheriffOrNot)
               break
             case 'sheriffVote':
-                await this.playSound(['everyone', 'voteSheriff', 'voteStart'])
+              await this.playSound(['everyone', 'voteSheriff', 'voteStart'])
               break
-              
+
             default:
               console.log(info)
               window.alert(`socket info state ${info.state} is not implemented!`)
@@ -156,6 +154,7 @@ export class GameComponent implements OnInit {
       return
     }
     await this.soundService.playSequence(seq)
+    Object.assign(this.sio.gameStatus, { instructionGiven: true })
     if (callback) {
       callback()
     }
@@ -198,14 +197,21 @@ export class GameComponent implements OnInit {
       )
   }
 
+  sendStart() {
+    if (this.modalRef) this.modalRef.hide()
+    if ('roleCheck' === this.currentState &&
+      !this.sio.gameStatus.readySent) {
+      this.sendReady()
+    }
+  }
+
   sendReady() {
     if (this.modalRef) this.modalRef.hide()
-    let key = this.currentState
-    if (this.sio.readySent[key]) return
-    this.sio.readySent[key] = true
-    console.log(`send ready ${key}`)
-    console.log('readySent = ', this.sio.readySent)
-    this.http.post('/api/ready', { for: key })
+    if (this.sio.gameStatus.state === this.currentState &&
+      this.sio.gameStatus.readySent) return
+    Object.assign(this.sio.gameStatus, { readySent: true })
+    console.log(`send ready ${this.currentState}`)
+    this.http.post('/api/ready', { for: this.currentState })
       .subscribe((result: WmServerResponse) => {
         if (!result.success) {
           console.log(result)
@@ -231,6 +237,7 @@ export class GameComponent implements OnInit {
     if (!allow) {
       console.log(this.currentState, this.currentRound, this.user)
       console.log('not allowed')
+      this.setAutoDismissMessage('选择无效')
       return
     }
 
@@ -238,14 +245,21 @@ export class GameComponent implements OnInit {
     this.http.post('/api/vote/', data)
       .subscribe((result: WmServerResponse) => {
         if (!result.success) {
-          console.log(result)
+          this.setAutoDismissMessage(`你选了${username}，但是有错：${result.message}`)
         } else {
           if ('wolf' in result) {
-            this.revealedRole = (result.wolf ? '狼人' : '平民')
-            //this.openModal(this.checkRole)
-            this.message = `${username} 是一个 ${result.wolf ? '狼人' : '平民'}!!`
+            this.setAutoDismissMessage(`${username}的身份是个${result.wolf ? '狼人' : '平民'}!!`)
+            setTimeout(()=>{
+              this.sendReady()
+            }, 2000)
+          } else {
+            this.setAutoDismissMessage(`你选了${username}`)
+            this.sendReady()
           }
-          this.sendReady()
+          
+          this.game.users.forEach(user => {
+            user.selected = user.name == username
+          })
         }
       },
         error => {
@@ -254,15 +268,18 @@ export class GameComponent implements OnInit {
         })
   }
 
-  confirmRunSheriff() {
-    console.log('confirmRun')
-    this.modalRef.hide()
+  setAutoDismissMessage(message: string, timeout?: number) {
+    timeout = timeout || 5000
+    this.messages.push(message)
+    setTimeout(()=>{
+      let index = this.messages.indexOf(message)
+      if (index != -1) {
+        this.messages.splice(index, 1)
+      }
+    }, timeout)
   }
-  declineRunSheriff() {
-    console.log('declineRunSheriff')
-    this.modalRef.hide()
-  }
+  
   openModal(template: TemplateRef<any>) {
-    this.modalRef = this.modalService.show(template, { class: 'modal-sm' })
+    this.modalRef = this.modalService.show(template, { class: 'modal-sm', backdrop: 'static' })
   }
 }

@@ -4,7 +4,7 @@ var Promise = require('bluebird')
 let lanuchUser = async (username, gamename) => {
   const browser = await puppeteer.launch({
     headless: false,
-    defaultViewport: { width: 600, height: 800 },
+    defaultViewport: { width: 600, height: 600 },
     args: [`--window-size=600,800`]
   });
   const page = await browser.newPage();

@@ -13,7 +13,8 @@ export interface WmUser {
   hunterKilled: string,
   lastAttacked: string,
   revealedIdot: boolean,
-  isOrganizer: boolean
+  isOrganizer: boolean,
+  selected: boolean
 }
 
 export interface WmGame {
@@ -56,4 +57,20 @@ export interface WmClientReponse {
 export interface WmServerNotify {
   state: string,
   round: number
+}
+
+export interface WmGameOptions {
+  wolfCount: number,
+  gameType: string,
+  witch: boolean,
+  prophet: boolean,
+  hunter: boolean,
+  guard: boolean,
+  idiot: boolean
+}
+export interface WmGameStatus {
+  state: string,
+  instructionGiven?: boolean,
+  message: string,
+  readySent?: boolean
 }

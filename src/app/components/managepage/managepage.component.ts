@@ -25,7 +25,7 @@ export class ManagepageComponent implements OnInit {
   public inGame: boolean = false
   public modalRef: BsModalRef
   public optForm: FormGroup
-  public myself = {}
+  public myself: WmUser = null
 
   @ViewChild('aboutMe', {static: true}) aboutMe
 
@@ -35,8 +35,7 @@ export class ManagepageComponent implements OnInit {
     private soundService: SoundService,
     private router: Router,
     private modalService: BsModalService,
-    private fb: FormBuilder,
-    private rest: RestfulService
+    private fb: FormBuilder
     ) {
   }
 
@@ -115,7 +114,7 @@ export class ManagepageComponent implements OnInit {
           this.http.get('/api/me')
           .subscribe((data: {user: any}) => {
             this.myself = data.user
-            this.rest.user = data.user
+            this.sio.user = data.user
           })
         }
       },
@@ -157,7 +156,7 @@ export class ManagepageComponent implements OnInit {
     )
   }
   startGame() {
-    this.rest.gameOpt = this.optForm.value
+    this.sio.gameOptions = this.optForm.value
     this.http.post('/api/start', this.optForm.value).subscribe(res => {
       this.router.navigate(['/game'])
     },
