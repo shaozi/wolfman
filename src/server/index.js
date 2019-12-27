@@ -386,7 +386,8 @@ function playGame(game) {
         case 'killVote':
           user.alive = false
         case 'witchkill': // this happens before death checking so should be in lastKilled and not directly set
-          getUsers(game.users, 'witch')[0].poison = false
+          if(game.roundState == 'witchkill')
+            getUsers(game.users, 'witch')[0].poison = false
           if(user.role === "hunter") user.hunterKilled = true
           if(user.sheriff) game.sheriffAlive = false
           if(game.roundState === 'killVote') {
