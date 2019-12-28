@@ -318,12 +318,12 @@ function shuffle(array) {
   return array;
 }
 
-function getUsers(game, state) {
+function getUsers(users, state, allowDead = false) {
   var check = ((state === "witchsave") || (state === "witchkill")) ? "witch" : state
   check = ((state === "hunterdeath") || (state === "hunterdeath2")) ? "hunter" : check
   check = ((state === "sheriffdeath") || (state === "sheriffdeath2")) ? "sheriff" : check
-  return game.users.filter((user) => {
-    if(check !== "sheriff" && !user.alive) return false // Dead don't participate in anything UNLESS it's the sheriff phases
+  return users.filter((user) => {
+    if(!allowDead && !user.alive) return false // Dead don't participate in anything
     if(check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
     if(check === "sheriffVote" && !user.sheriffRunning && game.round === 1) return true // Sheriff votes only people who aren't running (MUST BE ROUND 1)
     if(check === "nightStart" || check === "killVote") return true // Everyone participates in these events
@@ -350,7 +350,7 @@ function playGame(game) {
     // Deal with votes and move on
     // Unless no votes
     game.sheriffAlive = true
-    console.log("Votes: " + game.votes)
+    console.log("Votes: " + JSON.stringify(game.votes))
     if(Object.keys(game.votes).length > 0) {
       var user = findUserInGame(maxProp(game.votes), game.name) // Get max voted
       console.log(game.roundState + ": Voted " + user.name)
@@ -368,16 +368,16 @@ function playGame(game) {
           getUsers(game, 'guard')[0].lastProtect = maxProp(game.votes)
           break;
         case 'wolf':
-          if(!(getUsers(game, 'guard')[0] == user.name)) {
+          if(!(getUsers(game.users, 'guard', true)[0] == user.name)) {
             if(user.role === "hunter") user.hunterKilled = true
             if(user.sheriff) game.sheriffAlive = false
             game.lastKilled.push(user.name)
-            getUsers(game, "witch")[0].lastAttacked = user.name
-            console.log(getUsers(game, "witch"))
+            getUsers(game.users, "witch", true)[0].lastAttacked = user.name
+            console.log(getUsers(game.users, "witch"))
           }
           break;
         case 'witchsave':
-          if(getUsers(game, 'guard')[0] == user.name) {
+          if(getUsers(game.users, 'guard', true)[0] == user.name) {
             game.lastKilled.push(user.name)
             if(user.sheriff) game.sheriffAlive = false
           } else {

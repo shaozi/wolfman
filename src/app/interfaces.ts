@@ -1,18 +1,20 @@
 export interface WmUser {
   name: string,
   role: string,
-  live: boolean,
+  alive: boolean,
   poison: number,
   antidote: number,
   vote: string,
-  runSheriff: boolean,
-  quitRunSheriff: boolean,
+  sheriffRunning: boolean,
+  quitSheriffRunning: boolean,
   sheriff: boolean,
-  canShoot: boolean,
   protect: string,
   lastProtect: string,
+  hunterKilled: string,
+  lastAttacked: string,
   revealedIdot: boolean,
-  isOrganizer: boolean
+  isOrganizer: boolean,
+  selected: boolean
 }
 
 export interface WmGame {
@@ -55,4 +57,20 @@ export interface WmClientReponse {
 export interface WmServerNotify {
   state: string,
   round: number
+}
+
+export interface WmGameOptions {
+  wolfCount: number,
+  gameType: string,
+  witch: boolean,
+  prophet: boolean,
+  hunter: boolean,
+  guard: boolean,
+  idiot: boolean
+}
+export interface WmGameStatus {
+  state: string,
+  instructionGiven?: boolean,
+  message: string,
+  readySent?: boolean
 }

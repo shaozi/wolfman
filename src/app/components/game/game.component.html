@@ -1,31 +1,104 @@
 <div class="container">
 
   <ng-template #runSheriffOrNot>
-    <div class="modal-body text-center">
-      <p>Do you want to run Sheriff?</p>
-      <button type="button" class="btn btn-default" (click)="confirmRunSheriff()">Yes</button>
-      <button type="button" class="btn btn-default" (click)="declineRunSheriff()">No</button>
-    </div>
-  </ng-template>
-
-  <ng-template #userRole>
     <div class="modal-content">
       <div class="modal-header">
-        <h4 class="modal-title pull-left">My Info</h4>
-        <button type="button" class="close pull-right" aria-label="Close" (click)="modalRef.hide()">
+        <h4 class="modal-title pull-left">警长竞选</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendReady()">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        You are {{user.role}}!
+        你要竞选警长吗？
       </div>
       <div class="modal-footer">
-        <button id="roleready" type="button" class="btn btn-success" (click)="sendReady()">I'm Ready. Let's go!</button>
-        <button type="button" class="btn btn-secondary" (click)="modalRef.hide()">Cancel</button>
+        <button id="roleready" type="button" class="btn btn-success" (click)="sendVote(user.name)">要!</button>
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">不要</button>
       </div>
     </div>
   </ng-template>
 
+  <ng-template #passBadgeOrNot>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">警徽</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendReady()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        你要传递警徽吗？
+        <div>
+          <button type="button" class="btn btn-outline-primary m-3" *ngFor="let user of game.users"
+            (click)="sendVote(user.name)">
+            {{user.name}}
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">不要</button>
+      </div>
+    </div>
+  </ng-template>
+
+
+  <ng-template #userRole>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">你的身份</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendStart()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {{user.name}}的身份是<strong class="text-danger">{{sio.roleLabel[user.role]}}</strong>!
+      </div>
+      <div class="modal-footer">
+        <button id="roleready" type="button" class="btn btn-success" (click)="sendStart()">记住啦，开始吧</button>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #saveOrNot>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">解药</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendReady()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {{user.lastAttacked}} 被咬了，救吗？
+      </div>
+      <div class="modal-footer">
+        <button id="roleready" type="button" class="btn btn-success" (click)="sendVote(user.lastAttacked)">救</button>
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">不救</button>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #poisonOrNot>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">毒药</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendReady()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        要毒谁吗？
+        <div>
+          <button type="button" class="btn btn-outline-primary m-3" *ngFor="let user of game.users"
+            (click)="sendVote(user.name)">
+            {{user.name}}
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">不毒</button>
+      </div>
+    </div>
+  </ng-template>
 
   <div *ngIf="game">
     <div class="text-center">
@@ -33,24 +106,46 @@
     </div>
 
     <div *ngIf="user">
-      <button type="button" id="myrole" class="btn btn-info" (click)="openModal(userRole)">{{user.name}}</button>
-      <div> {{currentRound}} {{currentState}} {{user.role}} </div>
+      <button type="button" id="myrole" class="btn btn-info" (click)="openModal(userRole)">我的身份</button>
+      <span *ngIf="user.alive">😀</span>
+      <span *ngIf="!user.alive">😵</span>
+      <span *ngIf="user.sheriff">🚔</span>
+      <!--debug-->
+      <button type="button" id="test1" class="btn btn-outline-info" (click)="openModal(saveOrNot)">save</button>
+      <button type="button" id="test2" class="btn btn-outline-info" (click)="openModal(poisonOrNot)">poison</button>
+      <button type="button" id="test3" class="btn btn-outline-info" (click)="openModal(runSheriffOrNot)">run</button>
+      <div> {{user.name}} {{currentRound}} {{currentState}} {{user.role}} </div>
     </div>
 
     <div class="row p-3">
-      <div class="col-6 card shadow" *ngFor="let user of game.users">
-        <div class="card-body">
-          {{user.name}}
-          <button type="button" class="btn btn-outline-primary" (click)="sendVote(user)">Select</button> 
+      <div class="col-6 card shadow" *ngFor="let user of game.users" (click)="sendVote(user.name)">
+        <div class="row no-gutters">
+          <div class="col-4">
+            <img *ngIf="user.alive"  src="/assets/person.svg" class="card-img">
+            <img *ngIf="!user.alive" src="/assets/deadperson.svg" class="card-img">
+          </div>
+          <div class="col-8">
+            <div class="card-body">
+              <img>
+              {{user.name}}
+              <span *ngIf="user.isOrganizer">🚦</span>
+              <span *ngIf="user.sheriffRunning">✋</span>
+              <span *ngIf="user.sheriff">🚔</span>
+              <span *ngIf="!user.alive">😵</span>
+              <span *ngIf="user.selected">✅</span>
+              <!-- <button type="button" class="btn btn-outline-primary" (click)="sendVote(user.name)">Select</button> -->
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
+    <div *ngIf="messages.length" class="notification-footer">
+      <div *ngFor="let message of messages" class="alert alert-info">{{message}}</div>
+    </div>
     <pre>
 user:      {{user | json}}
-
-opt:      {{gameOpt | json}}
     </pre>
-    
   </div>
 
 </div>
