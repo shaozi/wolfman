@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 var Promise = require('bluebird')
+var userCount = 8
 
 let lanuchUser = async (username, gamename) => {
   const browser = await puppeteer.launch({
@@ -11,20 +12,19 @@ let lanuchUser = async (username, gamename) => {
   await page.goto('http://localhost:3200');
 
   await page.waitFor('#username');
-  await page.focus('#username')
-  await page.keyboard.type(username)
+  await page.type('#username', username)
   await page.$eval('#next', el => el.click())
 
   await page.waitFor('#gamename');
 
-  await page.focus('#gamename')
-  await page.keyboard.type(gamename)
+  //await page.focus('#gamename')
+  await page.type('#gamename', gamename)
 
   if (username === 'u0') {
     await page.$eval('#create', el => el.click())
     for (let i = 0; i < 20; i++) {
       let playerCount = (await page.$$('.playername')).length
-      if (playerCount == 5) {
+      if (playerCount == userCount) {
         break
       }
       console.log(playerCount)
@@ -49,7 +49,7 @@ let lanuchUser = async (username, gamename) => {
 
 (async () => {
   var users = []
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < userCount; i++) {
     users.push(`u${i}`)
   }
   var gamename = `g${Math.floor(Math.random() * 1000)}`
