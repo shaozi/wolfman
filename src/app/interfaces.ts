@@ -56,7 +56,8 @@ export interface WmClientReponse {
 
 export interface WmServerNotify {
   state: string,
-  round: number
+  round: number,
+  winState?: number
 }
 
 export interface WmGameOptions {

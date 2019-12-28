@@ -54,6 +54,9 @@ export class GameComponent implements OnInit {
     this.getGame()
     this.getMyRole()
     this.socket = this.sio.socket
+    this.socket.on('gameOver', async (info: { winState: number }) => {
+      window.alert(`Game Over! ${info.winState === 1 ? 'Wolf WINS' : 'Wolf LOSE'}`)
+    })
     this.socket.on('gameState', async (info: WmServerNotify) => {
       this.sio.gameStatus = { state: info.state, message: '' }
       this.currentRound = info.round
@@ -133,7 +136,6 @@ export class GameComponent implements OnInit {
             case 'sheriffVote':
               await this.playSound(['everyone', 'voteSheriff', 'voteStart'])
               break
-
             default:
               console.log(info)
               window.alert(`socket info state ${info.state} is not implemented!`)
@@ -209,9 +211,7 @@ export class GameComponent implements OnInit {
 
   sendReady() {
     if (this.modalRef) this.modalRef.hide()
-    if (!this.user.alive
-      && this.currentState !== 'sheriffdeath'
-      && this.currentState !== 'sheriffdeath2') {
+    if (!this.allowVote()) {
       console.log('user is not alive, and not in sheriff death state, dont send ready')
     }
     if (this.sio.gameStatus.state === this.currentState &&
@@ -230,20 +230,30 @@ export class GameComponent implements OnInit {
         })
   }
 
+  allowVote() {
+    if (
+      (
+        this.user.alive && (
+          this.currentState === 'killVote'
+          || this.currentState === 'sheriffNom'
+          || this.currentState === 'sheriffVote' // && !this.user.sheriffRunning
+          || this.currentState.includes(this.user.role)
+        )
+      )
+      ||
+      (
+        this.currentState.includes(this.user.role)
+        && this.user.role !== 'wolf'
+      )
+    ) return true
+    return false
+  }
+
   sendVote(username: string) {
     if (this.modalRef) {
       this.modalRef.hide()
     }
-    let allow = (
-      this.user.alive
-      || this.currentState === 'sheriffdeath'
-      || this.currentState === 'sheriffdeath2'
-    ) && (
-        this.currentState === 'killVote'
-        || this.currentState === 'sheriffNom'
-        || this.currentState === 'sheriffVote' // && !this.user.sheriffRunning
-        || this.currentState.includes(this.user.role)
-      )
+    let allow = this.allowVote()
 
     if (!allow) {
       console.log(this.currentState, this.currentRound, this.user)

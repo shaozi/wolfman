@@ -22,18 +22,26 @@ let lanuchUser = async (username, gamename) => {
 
   if (username === 'u0') {
     await page.$eval('#create', el => el.click())
-    await Promise.delay(20000)
+    for (let i = 0; i < 20; i++) {
+      let playerCount = (await page.$$('.playername')).length
+      if (playerCount == 5) {
+        break
+      }
+      console.log(playerCount)
+      await Promise.delay(1000)
+    }
     await page.$eval('#start', el => el.click())
     await page.bringToFront()
   } else {
-    await Promise.delay(5000)
+    await Promise.delay(2000)
     await page.$eval('#join', el => el.click())
-    await Promise.delay(15000)
-    await page.waitFor('#myrole')
-    await page.$eval('#myrole', ele=>ele.click())
-    await page.waitFor('#roleready')
-    await page.$eval('#roleready', ele=>ele.click())
+
   }
+  await Promise.delay(2000)
+  await page.waitFor('#myrole')
+  await page.$eval('#myrole', ele => ele.click())
+  await page.waitFor('#roleready')
+  await page.$eval('#roleready', ele => ele.click())
 
 
   //await browser.close();
@@ -41,10 +49,10 @@ let lanuchUser = async (username, gamename) => {
 
 (async () => {
   var users = []
-  for (let i = 0; i< 5; i++) {
+  for (let i = 0; i < 5; i++) {
     users.push(`u${i}`)
   }
-  var gamename = `g${Math.floor(Math.random()*1000)}`
+  var gamename = `g${Math.floor(Math.random() * 1000)}`
   users.forEach(async username => {
     await lanuchUser(username, gamename)
   });

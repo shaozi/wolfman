@@ -40,7 +40,7 @@
   <div *ngIf="game && game.users">
     <h3>Users</h3>
     <span *ngFor="let user of game.users">
-      <span class="badge badge-info">{{user.name}}</span> <span *ngIf="user.isOrganizer">(organizer)</span>
+      <span class="badge badge-info playername">{{user.name}}</span> <span *ngIf="user.isOrganizer">(organizer)</span>
     </span>
   </div>
 
