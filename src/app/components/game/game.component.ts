@@ -209,6 +209,11 @@ export class GameComponent implements OnInit {
 
   sendReady() {
     if (this.modalRef) this.modalRef.hide()
+    if (!this.user.alive
+      && this.currentState !== 'sheriffdeath'
+      && this.currentState !== 'sheriffdeath2') {
+      console.log('user is not alive, and not in sheriff death state, dont send ready')
+    }
     if (this.sio.gameStatus.state === this.currentState &&
       this.sio.gameStatus.readySent) return
     Object.assign(this.sio.gameStatus, { readySent: true })
@@ -229,12 +234,16 @@ export class GameComponent implements OnInit {
     if (this.modalRef) {
       this.modalRef.hide()
     }
-    let allow = this.user.alive && (
-      this.currentState === 'killVote'
-      || this.currentState === 'sheriffNom'
-      || this.currentState === 'sheriffVote' // && !this.user.sheriffRunning
-      || this.currentState.includes(this.user.role)
-    )
+    let allow = (
+      this.user.alive
+      || this.currentState === 'sheriffdeath'
+      || this.currentState === 'sheriffdeath2'
+    ) && (
+        this.currentState === 'killVote'
+        || this.currentState === 'sheriffNom'
+        || this.currentState === 'sheriffVote' // && !this.user.sheriffRunning
+        || this.currentState.includes(this.user.role)
+      )
 
     if (!allow) {
       console.log(this.currentState, this.currentRound, this.user)
