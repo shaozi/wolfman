@@ -318,13 +318,12 @@ function shuffle(array) {
   return array;
 }
 
-function getUsers(game, state, allowDead = false) {
+function getUsers(game, state) {
   var users = game.users
   var check = ((state === "witchsave") || (state === "witchkill")) ? "witch" : state
   check = ((state === "hunterdeath") || (state === "hunterdeath2")) ? "hunter" : check
   check = ((state === "sheriffdeath") || (state === "sheriffdeath2")) ? "sheriff" : check
   return users.filter((user) => {
-    if(!allowDead && !user.alive) return false // Dead don't participate in anything
     if(check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
     if(check === "sheriffVote" && !user.sheriffRunning && game.round === 1) return true // Sheriff votes only people who aren't running (MUST BE ROUND 1)
     if(check === "nightStart" || check === "killVote") return true // Everyone participates in these events
@@ -369,16 +368,16 @@ function playGame(game) {
           getUsers(game, 'guard')[0].lastProtect = maxProp(game.votes)
           break;
         case 'wolf':
-          if(!(getUsers(game, 'guard', true)[0] == user.name)) {
+          if(!(getUsers(game, 'guard')[0] == user.name)) {
             if(user.role === "hunter") user.hunterKilled = true
             if(user.sheriff) game.sheriffAlive = false
             game.lastKilled.push(user.name)
-            getUsers(game, "witch", true)[0].lastAttacked = user.name
+            getUsers(game, "witch")[0].lastAttacked = user.name
             console.log(getUsers(game, "witch"))
           }
           break;
         case 'witchsave':
-          if(getUsers(game, 'guard', true)[0] == user.name) {
+          if(getUsers(game, 'guard')[0] == user.name) {
             game.lastKilled.push(user.name)
             if(user.sheriff) game.sheriffAlive = false
           } else {
@@ -432,6 +431,9 @@ function playGame(game) {
       game.ready = false
       playGame(game) // Go to next stage
     } else {
+      for(user of game.waiting) {
+        if(!findUserInGame(user,game.name).alive) game.waiting.splice(game.waiting.indexOf(user), 1)
+      }  // Remove all people who are not alive
       console.log(game.roundState)
       io.to(game.name).emit("gameState", { state: game.roundState, round: game.round })
     }
