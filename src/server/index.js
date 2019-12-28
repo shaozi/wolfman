@@ -420,6 +420,7 @@ function playGame(game) {
         findUserInGame(user, game.name).alive = false
       }
     }
+    console.log("End: " + checkEnd(game))
     if(checkEnd(game) != 0) {
       io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
     }
