@@ -431,8 +431,8 @@ function playGame(game) {
       game.ready = false
       playGame(game) // Go to next stage
     } else {
-      for(user.name of game.waiting) {
-        if(!findUserInGame(user, game.name).alive) game.waiting.splice(game.waiting.indexOf(user), 1)
+      for(user of game.waiting) {
+        if(!findUserInGame(user.name, game.name).alive) game.waiting.splice(game.waiting.indexOf(user), 1)
       }  // Remove all people who are not alive
       console.log(game.roundState)
       io.to(game.name).emit("gameState", { state: game.roundState, round: game.round })
