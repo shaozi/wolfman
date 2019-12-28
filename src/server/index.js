@@ -410,8 +410,8 @@ function playGame(game) {
     if(game.roundState === "roleCheck")
       game.roundState = "nightStart"
     else
+      if(roundList.indexOf(game.roundState) == roundList.length - 1) game.round++
       game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1]
-      game.round++
     game.ready = false
     playGame(game) // Go to next stage
   } else {
@@ -420,7 +420,7 @@ function playGame(game) {
         findUserInGame(user, game.name).alive = false
       }
     }
-    if(checkEnd(game)) {
+    if(checkEnd(game) != 0) {
       io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
     }
     game.waiting = getUsers(game, game.roundState) // Get users for this round
@@ -440,7 +440,7 @@ function playGame(game) {
 
 function checkEnd(game) {
   // 0 = not ended, 1 = wolf win, 2 = wolf loss
-  if(getUsers(game, "wolf").filter((user) => { return user.alive }).length === 0) return 2
+  if(game.users.filter((user) => { return user.role == "wolf" && user.alive }).length === 0) return 2
   if(game.rule === "killAll") { // All dead
     if(game.users.filter((user) => { return user.role != "wolf" && user.alive }).length === 0) return 1
   }
