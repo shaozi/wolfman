@@ -408,9 +408,10 @@ function playGame(game) {
     }
     if(game.roundState === "roleCheck")
       game.roundState = "nightStart"
-    else
+    else {
       if(roundList.indexOf(game.roundState) == roundList.length - 1) game.round++
       game.roundState = roundList[roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1]
+    }
     game.ready = false
     playGame(game) // Go to next stage
   } else {
