@@ -359,7 +359,7 @@ function getUsers(game, state) {
   return users.filter((user) => {
     if (check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
     if (check === "sheriffVote" && !user.sheriffRunning && game.round === 1) return true // Sheriff votes only people who aren't running (MUST BE ROUND 1)
-    if (check === "nightStart" || check === "killVote") return true // Everyone participates in these events
+    if (check === "nightStart" || check === "killVote" || check === "dayStart") return true // Everyone participates in these events
     if (check === "sheriffNom" && game.round === 1) return true // Everyone participates in this event on ROUND 1
     if (user.role === "hunter" && check === "hunter" && !user.alive) return true // Check if hunter died
     if (user.role === check) return true // Get by role
@@ -378,7 +378,7 @@ function maxProp(obj) {
 function playGame(game) {
   // Waiting list should be empty when this starts
   let roundList = ['nightStart', 'guard', 'wolf', 'witchsave', 'witchkill',
-    'prophet', 'hunter', 'sheriffNom', 'sheriffVote', 'hunterdeath', 'sheriffdeath', 'killVote', 'hunterdeath2', 'sheriffdeath2']
+    'prophet', 'hunter', 'dayStart', 'sheriffNom', 'sheriffVote', 'hunterdeath', 'sheriffdeath', 'killVote', 'hunterdeath2', 'sheriffdeath2']
   if (game.ready) {
     // Deal with votes and move on
     // Unless no votes

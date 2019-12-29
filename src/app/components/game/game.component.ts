@@ -20,6 +20,7 @@ export class GameComponent implements OnInit {
   public currentState = ''
   public revealedRole = ''
   public messages = []
+  public isNight: boolean = true
   private socket
   private gameStatus: WmGameStatus
 
@@ -72,6 +73,7 @@ export class GameComponent implements OnInit {
         await this.giveInstruction()
         switch (this.currentState) {
           case 'nightStart':
+            this.isNight = true
             setTimeout(() => { this.sendReady() }, 2000)
             break
           case 'witchsave':
@@ -100,8 +102,11 @@ export class GameComponent implements OnInit {
           case 'sheriffNom':
             this.openModal('runSheriffOrNot')
             break
-          case 'sheriffVote':
+          case 'dayStart':
+            this.isNight = false
+            setTimeout(() => { this.sendReady() }, 2000)
             break
+          
           default:
             break
         }
@@ -119,6 +124,8 @@ export class GameComponent implements OnInit {
       this.router.navigate(['/manager'])
     }
     this.currentState = this.game.roundState
+    let dayStates = ['sheriffNom', 'sheriffVote', 'hunterdeath', 'sheriffdeath', 'killVote', 'hunterdeath2', 'sheriffdeath2']
+    this.isNight =  dayStates.indexOf(this.currentState) == -1
     let data = (await this.http.get('/api/me').toPromise()) as { user: WmUser }
     this.user = data.user
   }
@@ -178,7 +185,7 @@ export class GameComponent implements OnInit {
         break
       case 'dayStart':
         if (opt && opt.hunter) seq = ['hunter', 'closeEyes']
-        seq.push('isDay', 'everyone', 'openEyes', 'everyone', 'pleaseSpeak')
+        seq.push('isDay', 'everyone', 'openEyes')
         break
       case 'killVote':
         seq = ['everyone', 'pleaseSpeak', 'everyone', 'voteStart']

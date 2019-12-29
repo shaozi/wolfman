@@ -1,4 +1,4 @@
-<div class="container">
+<div [ngClass]="{nightbg: isNight, daybg: !isNight}">
 
   <ng-template #runSheriffOrNot>
     <div class="modal-content">
@@ -120,24 +120,27 @@
 
     <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent">
       请检查你的身份
-    </div> 
-    <div *ngIf="this.currentState !== 'roleCheck' || this.sio.gameStatus.readySent" class="row p-3">
-      <div class="col-6 card shadow" *ngFor="let user of game.users" (click)="sendVote(user.name)">
-        <div class="row no-gutters">
-          <div class="col-4">
-            <img *ngIf="user.alive"  src="/assets/person.svg" class="card-img">
-            <img *ngIf="!user.alive" src="/assets/deadperson.svg" class="card-img">
-          </div>
-          <div class="col-8">
-            <div class="card-body">
-              <img>
-              {{user.name}}
-              <span *ngIf="user.isOrganizer">🚦</span>
-              <span *ngIf="user.sheriffRunning">✋</span>
-              <span *ngIf="user.sheriff">🚔</span>
-              <span *ngIf="!user.alive">😵</span>
-              <span *ngIf="user.selected">✅</span>
-              <!-- <button type="button" class="btn btn-outline-primary" (click)="sendVote(user.name)">Select</button> -->
+    </div>
+    <div *ngIf="this.currentState !== 'roleCheck' || this.sio.gameStatus.readySent" class="row m-3">
+      <div class="col-6 p-1" *ngFor="let user of game.users" (click)="sendVote(user.name)">
+        <div class="card shadow"
+          [ngClass]="{'text-white': isNight, 'bg-dark': isNight, 'text-dark': !isNight, 'bg-light': !isNight}">
+          <div class="row no-gutters">
+            <div class="col-4">
+              <img *ngIf="user.alive" src="/assets/person.svg" class="card-img">
+              <img *ngIf="!user.alive" src="/assets/deadperson.svg" class="card-img">
+            </div>
+            <div class="col-8">
+              <div class="card-body">
+                <img>
+                {{user.name}}
+                <span *ngIf="user.isOrganizer">🚦</span>
+                <span *ngIf="user.sheriffRunning">✋</span>
+                <span *ngIf="user.sheriff">🚔</span>
+                <span *ngIf="!user.alive">😵</span>
+                <span *ngIf="user.selected">✅</span>
+                <!-- <button type="button" class="btn btn-outline-primary" (click)="sendVote(user.name)">Select</button> -->
+              </div>
             </div>
           </div>
         </div>
@@ -147,7 +150,7 @@
     <div *ngIf="messages.length" class="notification-footer">
       <div *ngFor="let message of messages" class="alert alert-info">{{message}}</div>
     </div>
-   
+
   </div>
 
 </div>
