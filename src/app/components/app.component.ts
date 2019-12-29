@@ -1,10 +1,4 @@
 import { Component } from '@angular/core';
-import * as io from 'socket.io-client'
-import { WmJoinRequest, WmServerResponse, WmCreateRequest, WmServerMessage } from '../interfaces';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { SocketioService } from 'src/app/services/socketio.service';
-import {Howl, Howler} from 'howler'
-import { RestfulService } from '../services/restful.service';
 
 @Component({
   selector: 'app-root',

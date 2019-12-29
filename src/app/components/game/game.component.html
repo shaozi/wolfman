@@ -106,18 +106,22 @@
     </div>
 
     <div *ngIf="user">
-      <button type="button" id="myrole" class="btn btn-info" (click)="openModal(userRole)">我的身份</button>
+      <button type="button" id="myrole" class="btn btn-info" (click)="openModal('userRole')">我的身份</button>
       <span *ngIf="user.alive">😀</span>
       <span *ngIf="!user.alive">😵</span>
       <span *ngIf="user.sheriff">🚔</span>
+      <button type="button" id="restart" class="btn btn-warning" (click)="restartGame()">Restart</button>
       <!--debug-->
-      <button type="button" id="test1" class="btn btn-outline-info" (click)="openModal(saveOrNot)">save</button>
-      <button type="button" id="test2" class="btn btn-outline-info" (click)="openModal(poisonOrNot)">poison</button>
-      <button type="button" id="test3" class="btn btn-outline-info" (click)="openModal(runSheriffOrNot)">run</button>
+      <button type="button" id="test1" class="btn btn-outline-info" (click)="openModal('saveOrNot')">save</button>
+      <button type="button" id="test2" class="btn btn-outline-info" (click)="openModal('poisonOrNot')">poison</button>
+      <button type="button" id="test3" class="btn btn-outline-info" (click)="openModal('runSheriffOrNot')">run</button>
       <div> {{user.name}} {{currentRound}} {{currentState}} {{user.role}} </div>
     </div>
 
-    <div class="row p-3">
+    <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent">
+      请检查你的身份
+    </div> 
+    <div *ngIf="this.currentState !== 'roleCheck' || this.sio.gameStatus.readySent" class="row p-3">
       <div class="col-6 card shadow" *ngFor="let user of game.users" (click)="sendVote(user.name)">
         <div class="row no-gutters">
           <div class="col-4">
@@ -143,9 +147,7 @@
     <div *ngIf="messages.length" class="notification-footer">
       <div *ngFor="let message of messages" class="alert alert-info">{{message}}</div>
     </div>
-    <pre>
-user:      {{user | json}}
-    </pre>
+   
   </div>
 
 </div>

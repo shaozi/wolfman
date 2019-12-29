@@ -7,7 +7,6 @@ import { SoundService } from 'src/app/services/sound.service';
 import { Router } from '@angular/router';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { FormBuilder, FormGroup } from '@angular/forms'
-import { RestfulService } from 'src/app/services/restful.service';
 
 @Component({
   selector: 'app-managepage',
@@ -41,6 +40,7 @@ export class ManagepageComponent implements OnInit {
 
   ngOnInit() {
     this.me()
+    this.refreshGame()
     this.socket = this.sio.socket
     this.socket.on('message', (message: WmServerMessage) => {
       console.log('got server message')
@@ -110,7 +110,7 @@ export class ManagepageComponent implements OnInit {
         this.sess = me
         if (this.sess.gamename) {
           this.inGame = true
-          this.refreshGame()
+          //this.refreshGame()
           this.http.get('/api/me')
           .subscribe((data: {user: any}) => {
             this.myself = data.user

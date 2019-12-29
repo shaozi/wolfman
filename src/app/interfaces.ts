@@ -70,8 +70,9 @@ export interface WmGameOptions {
   idiot: boolean
 }
 export interface WmGameStatus {
-  state: string,
+  state?: string,
+  diaglogInProgress?: string,
   instructionGiven?: boolean,
-  message: string,
+  message?: string,
   readySent?: boolean
 }

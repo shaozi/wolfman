@@ -21,7 +21,6 @@ export class SocketioService {
   constructor() {
     console.log('socket created')
     this.socket = io()
-    this.gameStatus = {state: '', message: ''}
   }
 
   get gameOptions(): WmGameOptions {
@@ -32,9 +31,17 @@ export class SocketioService {
   }
 
   get gameStatus(): WmGameStatus {
-    return JSON.parse(localStorage.getItem('gameStatus'))
+    return JSON.parse(localStorage.getItem('gameStatus')) || {}
   }
+
   set gameStatus(status: WmGameStatus) {
     localStorage.setItem('gameStatus', JSON.stringify(status))
+  }
+  
+  updateGameStatus(key: string, value: string|boolean) {
+    let status = this.gameStatus
+    status[key] = value
+    this.gameStatus = status
+    return status
   }
 }
