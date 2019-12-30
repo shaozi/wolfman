@@ -115,10 +115,10 @@
       <button type="button" id="test1" class="btn btn-outline-info" (click)="openModal('saveOrNot')">save</button>
       <button type="button" id="test2" class="btn btn-outline-info" (click)="openModal('poisonOrNot')">poison</button>
       <button type="button" id="test3" class="btn btn-outline-info" (click)="openModal('runSheriffOrNot')">run</button>
-      <div> {{user.name}} {{currentRound}} {{currentState}} {{user.role}} </div>
+      <div class="alert alert-info"> {{user.name}}-{{user.role}} {{currentRound}}-{{currentState}} </div>
     </div>
 
-    <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent">
+    <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent" class="alert alert-info">
       请检查你的身份
     </div>
     <div *ngIf="this.currentState !== 'roleCheck' || this.sio.gameStatus.readySent" class="row m-3">

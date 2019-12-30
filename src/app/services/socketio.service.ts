@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as io from 'socket.io-client'
 import { WmJoinRequest, WmServerResponse, WmCreateRequest, WmServerMessage, WmGameStatus, WmGameOptions, WmUser } from '../interfaces';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -18,14 +19,16 @@ export class SocketioService {
     prophet:'预言家'
   }
 
-  constructor() {
+  constructor(private http: HttpClient) {
     console.log('socket created')
     this.socket = io()
   }
 
-  get gameOptions(): WmGameOptions {
-    return JSON.parse(localStorage.getItem('gameOptions'))
+  getGameOptions(): Promise<WmGameOptions> {
+    console.log('get game options promise')
+    return this.http.get('/api/game').toPromise() as Promise<WmGameOptions>
   }
+
   set gameOptions(opt: WmGameOptions) {
     localStorage.setItem('gameOptions', JSON.stringify(opt))
   }
@@ -36,6 +39,7 @@ export class SocketioService {
 
   set gameStatus(status: WmGameStatus) {
     localStorage.setItem('gameStatus', JSON.stringify(status))
+    console.log(`save state:`, this.gameStatus)
   }
   
   updateGameStatus(key: string, value: string|boolean) {

@@ -58,14 +58,18 @@ export class GameComponent implements OnInit {
     this.getGameAndUser().then(async () => {
       await this.restoreSavedStatus()
       this.socket = this.sio.socket
-      this.socket.on('restart', ()=>{
+      this.socket.on('restart', () => {
         this.router.navigate(['/manage'])
       })
       this.socket.on('gameOver', async (info: { winState: number }) => {
-        window.alert(`Game Over! ${info.winState === 1 ? 'Wolf WINS' : 'Wolf LOSE'}`)
+        //window.alert(`Game Over! ${info.winState === 1 ? 'Wolf WINS' : 'Wolf LOSE'}`)
+        console.log('game over')
+        this.router.navigate(['/manage'])
       })
       this.socket.on('gameState', async (info: WmServerNotify) => {
-        console.log(`Got socket signal gameState - ${JSON.stringify(info)}`)
+        console.log(`Got socket signal gameState - ${JSON.stringify(info)}. delay 1s`)
+        await this.delay(1000)
+        console.log(`process signal ${info.state}`)
         this.sio.gameStatus = { state: info.state }
         this.currentRound = info.round
         this.currentState = info.state
@@ -106,11 +110,17 @@ export class GameComponent implements OnInit {
             this.isNight = false
             setTimeout(() => { this.sendReady() }, 2000)
             break
-          
+
           default:
             break
         }
       })
+    })
+  }
+
+  delay(ms: number) {
+    return new Promise((resolve) => {
+      setTimeout(() => { resolve() }, ms)
     })
   }
 
@@ -119,18 +129,29 @@ export class GameComponent implements OnInit {
   }
 
   async getGameAndUser() {
-    this.game = (await this.http.get('/api/game').toPromise()) as WmGame
-    if (this.game.round == 0) {
-      this.router.navigate(['/manager'])
+    try {
+      this.game = (await this.http.get('/api/game').toPromise()) as WmGame
+      if (this.game.round == 0 || this.game.over) {
+        this.router.navigate(['/manager'])
+        return
+      }
+      this.currentState = this.game.roundState
+      let dayStates = ['sheriffNom', 'sheriffVote', 'hunterdeath', 'sheriffdeath', 'killVote', 'hunterdeath2', 'sheriffdeath2']
+      this.isNight = dayStates.indexOf(this.currentState) == -1
+      let data = (await this.http.get('/api/me').toPromise()) as { user: WmUser }
+      this.user = data.user
+    } catch (error) {
+      console.error(error)
+      this.router.navigate(['/login'])
     }
-    this.currentState = this.game.roundState
-    let dayStates = ['sheriffNom', 'sheriffVote', 'hunterdeath', 'sheriffdeath', 'killVote', 'hunterdeath2', 'sheriffdeath2']
-    this.isNight =  dayStates.indexOf(this.currentState) == -1
-    let data = (await this.http.get('/api/me').toPromise()) as { user: WmUser }
-    this.user = data.user
   }
 
   async restoreSavedStatus() {
+    if (this.currentRound === 0) {
+      // new game, clean up status
+      this.sio.gameStatus = {}
+      return
+    }
     let status = this.sio.gameStatus
     if (status.state !== this.game.roundState) {
       return
@@ -155,7 +176,8 @@ export class GameComponent implements OnInit {
       console.log('user is not organizer')
       return
     }
-    let opt = this.sio.gameOptions
+    let opt = this.game.options
+    console.log('opt is', opt)
     let seq = []
     switch (this.currentState) {
       case 'nightStart':
@@ -199,7 +221,7 @@ export class GameComponent implements OnInit {
         seq = ['everyone', 'voteSheriff']
         break
       case 'sheriffVote':
-        seq = ['everyone', 'voteSheriff', 'voteStart']
+        seq = ['voteSheriff', 'voteStart']
         break
       default:
         window.alert(`socket info state ${this.currentState} is not implemented!`)
@@ -216,18 +238,21 @@ export class GameComponent implements OnInit {
     }
   }
 
-  sendReady() {
+  sendReady(username?: string) {
     if (this.modalRef) this.modalRef.hide()
-    if (!this.allowVote()) {
-      console.log('user is not alive, and not in sheriff death state, dont send ready')
+    if (!this.allowVote(username)) {
+      console.log('vote is not allowed, dont send ready')
+      return
     }
-
+    // FIXME: status update need to be atomic
     this.sio.updateGameStatus('readySent', true)
     console.log(`send ready ${this.currentState}`)
-    this.http.post('/api/ready', { for: this.currentState })
+    this.http.post('/api/ready', { state: this.currentState })
       .subscribe((result: WmServerResponse) => {
         if (!result.success) {
           console.log(result)
+        } else {
+
         }
       },
         error => {
@@ -236,13 +261,13 @@ export class GameComponent implements OnInit {
         })
   }
 
-  allowVote() {
+  allowVote(username?: string) {
     let allow = (
       (
+        this.currentState == 'dayStart'
+        ||
         this.user.alive && (
           this.currentState === 'killVote'
-          || this.currentState === 'sheriffNom'
-          || this.currentState === 'sheriffVote' // && !this.user.sheriffRunning
           || this.currentState === 'nightStart'
           || this.currentState === 'roleCheck'
           || this.currentState.includes(this.user.role)
@@ -253,31 +278,39 @@ export class GameComponent implements OnInit {
         this.currentState.includes(this.user.role)
         && this.user.role !== 'wolf'
       )
+      || (
+        this.currentState === 'sheriffNom'
+        || this.currentState === 'sheriffVote' && !this.user.sheriffRunning
+      )
     )
     if (this.sio.gameStatus.state === this.currentState &&
       this.sio.gameStatus.readySent) {
       allow = false
     }
-    console.log('allowVote check', this.user, this.currentState, this.sio.gameStatus, allow)
+    if (allow && this.currentState === 'sheriffVote') {
+      let user = this.game.users.find(u => { return u.name === username })
+      if (!user || !user.sheriffRunning) { // only allow select running user
+        allow = false
+      }
+    }
+    console.log('allowVote check username: ', username, this.user, this.currentState, this.sio.gameStatus, allow)
     return allow
   }
 
   sendVote(username: string) {
-    if (this.modalRef) {
-      this.modalRef.hide()
-    }
-    let allow = this.allowVote()
+
+    let allow = this.allowVote(username)
     if (this.currentState == 'roleCheck') {
       allow == false
     }
     if (!allow) {
-      console.log(this.currentState, this.currentRound, this.user)
-      console.log('not allowed')
       this.setAutoDismissMessage('选择无效')
       return
     }
-
-    let data = { vote: username }
+    if (this.modalRef) {
+      this.modalRef.hide()
+    }
+    let data = { vote: username, state: this.currentState }
     this.http.post('/api/vote/', data)
       .subscribe((result: WmServerResponse) => {
         if (!result.success) {
@@ -286,11 +319,11 @@ export class GameComponent implements OnInit {
           if ('wolf' in result) {
             this.setAutoDismissMessage(`${username}的身份是个${result.wolf ? '狼人' : '平民'}!!`)
             setTimeout(() => {
-              this.sendReady()
+              this.sendReady(username)
             }, 2000)
           } else {
             this.setAutoDismissMessage(`你选了${username}`)
-            this.sendReady()
+            this.sendReady(username)
           }
 
           this.game.users.forEach(user => {
@@ -326,6 +359,6 @@ export class GameComponent implements OnInit {
   }
 
   restartGame() {
-    this.http.post('/api/restart', this.sio.gameOptions).subscribe()
+    this.http.post('/api/restart', {}).subscribe()
   }
 }

@@ -21,7 +21,9 @@ export interface WmGame {
   name: string,
   round: number,
   users: WmUser[],
-  roundState: string
+  roundState: string,
+  options: WmGameOptions,
+  over?: boolean
 }
 
 export interface WmClientRequest {

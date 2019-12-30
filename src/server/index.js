@@ -37,8 +37,7 @@ io.use(sharedsession(sessionMiddleware, {
 }))
 
 io.on('connection', function (socket) {
-  console.log(`user : ${socket.handshake.session.user}, game: ${socket.handshake.session.game}`)
-  console.log('a user connected');
+  console.log(`${socket.handshake.session.game}: ${socket.handshake.session.user} socket connected`)
   try {
     let username = socket.handshake.session.user
     let gamename = socket.handshake.session.game
@@ -54,7 +53,11 @@ io.on('connection', function (socket) {
   }
 
   socket.on('disconnect', function () {
-    console.log('user disconnected');
+    if (!socketGameUserMap[socket.id]) {
+      return
+    }
+    let { game, user } = socketGameUserMap[socket.id]
+    console.log(`${game}: ${user} socket disconnected`);
     delete socketGameUserMap[socket.id]
   })
 
@@ -119,6 +122,7 @@ function userJoinGame(username, gamename, socketId) {
 }
 
 function getGameDetails(gamename) {
+  // don't leak more information here
   let game = findGame(gamename)
   return {
     name: game.name,
@@ -134,7 +138,8 @@ function getGameDetails(gamename) {
       }
     }),
     round: game.round,
-    roundState: game.roundState
+    roundState: game.roundState,
+    options: game.options
   }
 }
 
@@ -239,7 +244,6 @@ function createGame(req, res) {
     }
     games[gamename] = {
       name: gamename,
-      rule: '', // 屠边 屠城
       round: 0,
       roundState: 'roleCheck', // waiting for what to be voted. sheriff, night kill, day kill,
       lastKilled: [], // list of deaths this round
@@ -252,6 +256,7 @@ function createGame(req, res) {
       ready: false
     }
     userJoinGame(username, gamename, socket.id)
+    //console.log(JSON.stringify(games[gamename], null, 2))
     saveUserGameToSession(req, username, gamename)
     res.json({ success: true })
   } catch (error) {
@@ -263,7 +268,6 @@ function createGame(req, res) {
 function startGame(req, res) {
   let gameOptions = req.body
   let game = findGame(req.session.game)
-  game.rule = gameOptions.gameType
   game.options = gameOptions
   if (game.round != 0) {
     res.status(400).json({ message: 'game already started' })
@@ -275,12 +279,12 @@ function startGame(req, res) {
   else res.json({ success: false, message: "Bad Role Settings" })
   game.waiting = getUsers(game, "nightStart")
   io.to(game.name).emit("gameState", { state: "roleCheck" })
+  //console.log(JSON.stringify(game, null, 2))
 }
 
 function restartGame(req, res) {
   let game = findGame(req.session.game)
   Object.assign(game, {
-    rule: '', // 屠边 屠城
     round: 0,
     roundState: 'roleCheck', // waiting for what to be voted. sheriff, night kill, day kill,
     lastKilled: [], // list of deaths this round
@@ -306,6 +310,7 @@ function restartGame(req, res) {
   })
   res.json({ success: true })
   io.to(game.name).emit('restart', null)
+  //console.log(JSON.stringify(game, null, 2))
 }
 
 function assignRoles(game, data) {
@@ -357,7 +362,31 @@ function getUsers(game, state) {
   check = ((state === "hunterdeath") || (state === "hunterdeath2")) ? "hunter" : check
   check = ((state === "sheriffdeath") || (state === "sheriffdeath2")) ? "sheriff" : check
   return users.filter((user) => {
-    if (check === "killVote" && user.revealedIdiot) return false // Idiot can't vote after revealed
+    switch (check) {
+      case 'killVote':
+        return (user.alive && !user.revealedIdiot) // Idiot can't vote after revealed
+      case 'sheriffVote':
+        return (game.round === 1 && !user.sheriffRunning) // Sheriff votes only people who aren't running (MUST BE ROUND 1)
+      case 'nightStart':
+      case 'dayStart':
+        return user.alive // Everyone participates in these events
+      case 'sheriffNom':
+        return game.round === 1 // Everyone participates in this event on ROUND 1
+      case 'hunter':
+        return user.role === 'hunter' && !user.alive // Check if hunter died
+      case 'sheriff':
+        if (user.sheriff && !user.alive) {
+          user.sheriff = false
+          return true
+        } // Check if sheriff died and remove his status
+        return false
+      case 'wolf':
+        return user.role === 'wolf' && user.alive
+      default:
+        return user.role === check
+    }
+
+    if (check === "killVote" && (user.revealedIdiot || !user.alive)) return false
     if (check === "sheriffVote" && !user.sheriffRunning && game.round === 1) return true // Sheriff votes only people who aren't running (MUST BE ROUND 1)
     if (check === "nightStart" || check === "killVote" || check === "dayStart") return true // Everyone participates in these events
     if (check === "sheriffNom" && game.round === 1) return true // Everyone participates in this event on ROUND 1
@@ -377,8 +406,7 @@ function maxProp(obj) {
 
 function playGame(game) {
   // Waiting list should be empty when this starts
-  let roundList = ['nightStart', 'guard', 'wolf', 'witchsave', 'witchkill',
-    'prophet', 'hunter', 'dayStart', 'sheriffNom', 'sheriffVote', 'hunterdeath', 'sheriffdeath', 'killVote', 'hunterdeath2', 'sheriffdeath2']
+
   if (game.ready) {
     // Deal with votes and move on
     // Unless no votes
@@ -397,6 +425,7 @@ function playGame(game) {
           user.sheriff = true;
           break
         case 'guard':
+          if (!getUsers(game, 'guard')[0].alive) break // skip if guard is dead
           getUsers(game, 'guard')[0].protect = user.name
           getUsers(game, 'guard')[0].lastProtect = maxProp(game.votes)
           break;
@@ -410,19 +439,21 @@ function playGame(game) {
           }
           break;
         case 'witchsave':
+          if (!getUsers(game, 'witch')[0].alive) break // skip if witch is dead
           if (getUsers(game, 'guard')[0] == user.name) {
             game.lastKilled.push(user.name)
             if (user.sheriff) game.sheriffAlive = false
           } else {
             if (findUserInGame(game.lastKilled.pop(), game.name).sheriff) game.sheriffAlive = true // Revive and check sheriff
           }
-          getUsers(game, 'witch')[0].antidote = false
+          witch.antidote = false
           break;
         case 'hunterdeath':
         case 'hunterdeath2':
         case 'killVote':
           user.alive = false
         case 'witchkill': // this happens before death checking so should be in lastKilled and not directly set
+          if (!getUsers(game, 'witch')[0].alive) break // skip if witch is dead
           if (game.roundState == 'witchkill')
             getUsers(game, 'witch')[0].poison = false
           if (user.role === "hunter") user.hunterKilled = true
@@ -434,18 +465,13 @@ function playGame(game) {
             } else game.voteKilled = user.name
           } else game.lastKilled.push(user.name)
       }
-      if (checkEnd(game)) {
-        io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
-      }
+      checkEnd(game)
       game.votes = {} // reset votes
     }
     if (game.roundState === "roleCheck")
       game.roundState = "nightStart"
-    else {
-      let index = roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1
-      if (index == 0) game.round++
-      game.roundState = roundList[index]
-    }
+    else
+      advanceRound(game)
     game.ready = false
     playGame(game) // Go to next stage
   } else {
@@ -454,17 +480,13 @@ function playGame(game) {
         findUserInGame(user, game.name).alive = false
       }
     }
-    console.log("End: " + checkEnd(game))
-    if (checkEnd(game) != 0) {
-      io.to(game.name).emit("gameOver", { winState: checkEnd(game) })
-    }
+    let endResult = checkEnd(game)
+    console.log(`End: ${endResult}`)
     game.waiting = getUsers(game, game.roundState) // Get users for this round
     if (game.waiting.length === 0) { // Nobody needs to go OR its the last hunter round and hunter didn't die
       // Skip this round
       console.log(`skip round ${game.roundState}`)
-      let index = roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1
-      if (index == 0) game.round++
-      game.roundState = roundList[index]
+      advanceRound(game)
       game.ready = false
       playGame(game) // Go to next stage
     } else {
@@ -477,17 +499,55 @@ function playGame(game) {
   }
 }
 
+function advanceRound(game) {
+  let roundList = [
+    'nightStart',
+    'guard',
+    'wolf',
+    'witchsave',
+    'witchkill',
+    'prophet',
+    'hunter',
+    'dayStart',
+    'sheriffNom',
+    'sheriffVote',
+    'hunterdeath',
+    'sheriffdeath',
+    'killVote',
+    'hunterdeath2',
+    'sheriffdeath2'
+  ]
+  let index = roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1
+  if (index == 0) game.round++
+  game.roundState = roundList[index]
+  console.log(`Game round advanced to round: ${game.round}, state: ${game.roundState}`)
+}
+
 function checkEnd(game) {
   // 0 = not ended, 1 = wolf win, 2 = wolf loss
-  if (game.users.filter((user) => { return user.role == "wolf" && user.alive }).length === 0) return 2
-  if (game.rule === "killAll") { // All dead
-    if (game.users.filter((user) => { return user.role != "wolf" && user.alive }).length === 0) return 1
+  let result = 0
+  let wolfCount = game.users.filter((user) => { return user.role == "wolf" && user.alive }).length
+  let nonWolfCount = game.users.filter((user) => { return user.role != "wolf" && user.alive }).length
+  let villagerCount = game.users.filter((user) => { return user.role == "villager" && user.alive }).length
+  let specialCharactorCount = game.users.filter((user) => { return user.role != "wolf" && user.role != "villager" && user.alive }).length
+
+  if (wolfCount === 0) {
+    result = 2
+  } else if (game.options.gameType === "killAll") { // All dead
+    if (nonWolfCount === 0) {
+      result = 1
+    }
+  } else if (game.options.gameType === 'killSide') { // All villagers dead or all specials dead
+    if (villagerCount === 0 || specialCharactorCount === 0) {
+      result = 1
+    }
   }
-  if (game.rule === "killSide") { // All villagers dead or all specials dead
-    if (game.users.filter((user) => { return user.role == "villager" && user.alive }).length === 0 ||
-      game.users.filter((user) => { return user.role != "wolf" && user.role != "villager" && user.alive }).length === 0) return 1
+  if (result) {
+    io.to(game.name).emit('gameOver', {winState: result})
+    game.round = 0
+    game.over = true
   }
-  return 0
+  return result
 }
 
 /**
@@ -495,9 +555,14 @@ function checkEnd(game) {
  */
 function vote(req, res) {
   var game = findGame(req.session.game)
-  var vote = req.body.vote
+  var { state, vote } = req.body
   var user = findUserInGame(req.session.user, req.session.game)
-
+  console.log(`${req.session.user} in ${req.session.game} vote ${JSON.stringify(vote)}`)
+  if (state !== game.roundState) {
+    console.log(`${req.session.user} in ${req.session.game} send vote state : ${state} != game state : ${game.roundState}. ignore vote`)
+    res.status(400).json('wrong game state')
+    return
+  }
   // Check Validity based on round
   switch (game.roundState) {
     case "guard":
@@ -537,8 +602,13 @@ function ready(req, res) {
   var user = req.session.user
   console.log(`READY: user : ${user}, info: ${JSON.stringify(info)} `)
   var game = findGame(req.session.game)
-  //console.log(JSON.stringify(game.waiting))
+  if (info.state !== game.roundState) {
+    console.log(`${req.session.user} in ${req.session.game} send ready state : ${info.state} != game state : ${game.roundState}. ignore vote`)
+    res.status(400).json('wrong ready state')
+    return
+  }
   game.waiting = game.waiting.filter(u => { return u.name !== req.session.user })
+  console.log(JSON.stringify(game.waiting.map(u => { return u.name })))
   if (game.waiting.length == 0) {
     game.ready = true
     playGame(game)
@@ -607,7 +677,6 @@ app.get('/api/me', getUserInfo)
 app.post('/api/ready', ready)
 app.get('/api/game', function (req, res) {
   let gamename = req.session.game
-  console.log(`get game ${gamename}`)
   try {
     let game = getGameDetails(gamename)
     res.json(game)

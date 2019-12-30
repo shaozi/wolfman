@@ -87,7 +87,7 @@ export class ManagepageComponent implements OnInit {
     this.http.get(`/api/game`)
       .subscribe((game : WmGame) => {
         this.game = game
-        if (game.round > 0)  {
+        if (game.round > 0 && !game.over)  {
           this.router.navigate(['/game'])
         }
       },
@@ -156,7 +156,6 @@ export class ManagepageComponent implements OnInit {
     )
   }
   startGame() {
-    this.sio.gameOptions = this.optForm.value
     this.http.post('/api/start', this.optForm.value).subscribe(res => {
       this.router.navigate(['/game'])
     },
