@@ -124,6 +124,9 @@ function userJoinGame(username, gamename, socketId) {
 function getGameDetails(gamename) {
   // don't leak more information here
   let game = findGame(gamename)
+  if (!game) {
+    return {}
+  }
   return {
     name: game.name,
     status: game.status,

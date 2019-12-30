@@ -132,7 +132,7 @@ export class GameComponent implements OnInit {
     try {
       this.game = (await this.http.get('/api/game').toPromise()) as WmGame
       if (this.game.round == 0 || this.game.over) {
-        this.router.navigate(['/manager'])
+        this.router.navigate(['/manage'])
         return
       }
       this.currentState = this.game.roundState

@@ -9,7 +9,7 @@ let lanuchUser = async (username, gamename) => {
     args: [`--window-size=600,800`]
   });
   const page = await browser.newPage();
-  await page.goto('http://localhost:3200');
+  await page.goto('http://wolf');
 
   await page.waitFor('#username');
   await page.type('#username', username)
