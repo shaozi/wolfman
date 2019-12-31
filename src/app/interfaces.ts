@@ -1,5 +1,6 @@
 export interface WmUser {
   name: string,
+  avatar: string,
   role: string,
   alive: boolean,
   poison: number,

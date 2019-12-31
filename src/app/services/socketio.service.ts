@@ -10,13 +10,13 @@ export class SocketioService {
   public socket
   public user: WmUser
   public roleLabel = {
-    wolf: '狼人 - wolf',
-    villager: '村民 - villager',
-    witch: '女巫 - witch',
-    guard:'守卫 - guard',
-    hunter:'猎人 - hunter',
-    idiot:'傻瓜 - iaiot',
-    prophet:'预言家 - prophet'
+    wolf: '狼人',
+    villager: '村民',
+    witch: '女巫',
+    guard:'守卫',
+    hunter:'猎人',
+    idiot:'傻瓜',
+    prophet:'预言家'
   }
 
   public stateLabel = {

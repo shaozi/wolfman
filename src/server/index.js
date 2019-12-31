@@ -101,8 +101,10 @@ function userJoinGame(username, gamename, socketId) {
   if (game.users.length == 0) {
     isOrganizer = true
   }
+  let avatar = `/assets/avatar/kidaha-${Math.floor(Math.random() * 12) + 1}`
   game.users.push({
     name: username,
+    avatar: avatar,
     role: null,
     alive: true,
     poison: true,
@@ -137,6 +139,7 @@ function getGameDetails(gamename) {
     users: game.users.map(u => {
       return {
         name: u.name,
+        avatar: u.avatar,
         isOrganizer: u.isOrganizer,
         alive: u.alive,
         sheriffRunning: u.sheriffRunning,
@@ -378,6 +381,7 @@ function getUsers(game, state) {
       case 'sheriffVote':
         return (game.round === 1 && !user.sheriffRunning) // Sheriff votes only people who aren't running (MUST BE ROUND 1)
       case 'nightStart':
+        return user.alive
       case 'dayStart':
         return true // Everyone participates in these events
       case 'sheriffNom':
