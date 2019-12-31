@@ -23,6 +23,8 @@
 
   She can only use each potion once during the game. She can use both potions during the same night. She can save herself if she has been attacked by the werewolves on the first night.
 
+  If the antidote is used, she will not be able to know who was attacked by wolves.
+
 * Seer/ Fortune Teller/ Oracle/ Prophet (预言家)
 
   Each night, they can discover the real identity of a player. However, they can only verify if a player is a werewolf or not. They cannot see if a player has special power.

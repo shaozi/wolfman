@@ -21,6 +21,7 @@ export class GameComponent implements OnInit {
   public revealedRole = ''
   public messages = []
   public isNight: boolean = true
+  public endResult: string = ''
   private socket
   private gameStatus: WmGameStatus
 
@@ -31,6 +32,9 @@ export class GameComponent implements OnInit {
   @ViewChild('saveOrNot', { static: true }) saveOrNot
   @ViewChild('poisonOrNot', { static: true }) poisonOrNot
   @ViewChild('passBadgeOrNot', { static: true }) passBadgeOrNot: TemplateRef<any>
+  @ViewChild('revengeOrNot', { static: true }) revengeOrNot: TemplateRef<any>
+  @ViewChild('hunterOk', { static: true }) hunterOk: TemplateRef<any>
+
   public templates: { [name: string]: TemplateRef<any> } = null
 
   // used for saved state so to re-display later
@@ -50,7 +54,9 @@ export class GameComponent implements OnInit {
       runSheriffOrNot: this.runSheriffOrNot,
       saveOrNot: this.saveOrNot,
       poisonOrNot: this.poisonOrNot,
-      passBadgeOrNot: this.passBadgeOrNot
+      passBadgeOrNot: this.passBadgeOrNot,
+      revengeOrNot: this.revengeOrNot,
+      hunterOk: this.hunterOk
     }
     if (this.counter > 1) throw new Error('double init')
     this.user = this.sio.user
@@ -62,7 +68,7 @@ export class GameComponent implements OnInit {
         this.router.navigate(['/manage'])
       })
       this.socket.on('gameOver', async (info: { winState: number }) => {
-        //window.alert(`Game Over! ${info.winState === 1 ? 'Wolf WINS' : 'Wolf LOSE'}`)
+        this.endResult = `Game Over! ${info.winState === 1 ? '狼人赢了！' : '村民赢了！'}`
         console.log('game over')
         this.router.navigate(['/manage'])
       })
@@ -90,9 +96,38 @@ export class GameComponent implements OnInit {
             setTimeout(() => {
               if (this.user.role == 'witch')
                 this.openModal('poisonOrNot')
+            }, 1000)
+            break
+          case 'hunter':
+            if (this.user.role == 'hunter') {
+              if (!this.user.hunterCanShoot) {
+                this.openModal('hunterOk')
+              }
+              else {
+                this.sendReady()
+              }
+            } 
+            break
+          case 'hunterKill':
+            setTimeout(() => {
+              if (this.user.role == 'hunter') {
+                if (this.user.hunterCanShoot)
+                  this.openModal('revengeOrNot')
+                else {
+                  this.openModal('hunterOk')
+                }
+              } 
             }, 2000)
             break
-          case 'sheriff':
+
+          case 'hunterKill2':
+            setTimeout(() => {
+              if (this.user.role == 'hunter' && this.user.hunterCanShoot)
+                this.openModal('revengeOrNot')
+            }, 2000)
+            break
+          case 'sheriffdeath':
+          case 'sheriffdeath2':
             setTimeout(() => {
               if (this.user.sheriff)
                 this.openModal('passBadgeOrNot')
@@ -118,6 +153,13 @@ export class GameComponent implements OnInit {
     })
   }
 
+  toggleMute() {
+    this.soundService.toggleMute()
+  }
+  get mute() {
+    return this.soundService.mute
+  }
+
   delay(ms: number) {
     return new Promise((resolve) => {
       setTimeout(() => { resolve() }, ms)
@@ -131,15 +173,18 @@ export class GameComponent implements OnInit {
   async getGameAndUser() {
     try {
       this.game = (await this.http.get('/api/game').toPromise()) as WmGame
+      console.log('game = ', this.game)
       if (this.game.round == 0 || this.game.over) {
         this.router.navigate(['/manage'])
         return
       }
       this.currentState = this.game.roundState
-      let dayStates = ['sheriffNom', 'sheriffVote', 'hunterdeath', 'sheriffdeath', 'killVote', 'hunterdeath2', 'sheriffdeath2']
+      this.currentRound = this.game.round
+      let dayStates = ['sheriffNom', 'sheriffVote', 'hunterKill', 'sheriffdeath', 'killVote', 'hunterKill2', 'sheriffdeath2']
       this.isNight = dayStates.indexOf(this.currentState) == -1
       let data = (await this.http.get('/api/me').toPromise()) as { user: WmUser }
       this.user = data.user
+      console.log('user = ', this.user)
     } catch (error) {
       console.error(error)
       this.router.navigate(['/login'])
@@ -163,7 +208,7 @@ export class GameComponent implements OnInit {
       this.openModal(status.diaglogInProgress)
     }
     if (!status.instructionGiven) {
-      this.giveInstruction()
+      await this.giveInstruction()
     }
   }
 
@@ -173,11 +218,11 @@ export class GameComponent implements OnInit {
       return
     }
     if (!this.user.isOrganizer) {
-      console.log('user is not organizer')
-      return
+      //console.log('user is not organizer')
+      //return
     }
     let opt = this.game.options
-    console.log('opt is', opt)
+    //console.log('opt is', opt)
     let seq = []
     switch (this.currentState) {
       case 'nightStart':
@@ -222,6 +267,15 @@ export class GameComponent implements OnInit {
         break
       case 'sheriffVote':
         seq = ['voteSheriff', 'voteStart']
+        break
+      case 'sheriffdeath':
+      case 'sheriffdeath2':
+        seq = ['voteSheriff', 'voteStart']
+        break
+      case 'hunterKill':
+        break
+      case 'hunterKill2':
+        seq = ['hunter', 'choose']
         break
       default:
         window.alert(`socket info state ${this.currentState} is not implemented!`)
@@ -282,6 +336,10 @@ export class GameComponent implements OnInit {
         this.currentState === 'sheriffNom'
         || this.currentState === 'sheriffVote' && !this.user.sheriffRunning
       )
+      || (
+        (this.currentState === 'sheriffdeath' || this.currentState === 'sheriffdeath2')
+        && (this.user.sheriff && !this.game.users.find(u => {return u.name === username}).sheriff)
+        )
     )
     if (this.sio.gameStatus.state === this.currentState &&
       this.sio.gameStatus.readySent) {
@@ -338,7 +396,7 @@ export class GameComponent implements OnInit {
   }
 
   setAutoDismissMessage(message: string, timeout?: number) {
-    timeout = timeout || 5000
+    timeout = timeout || 2000
     this.messages.push(message)
     setTimeout(() => {
       let index = this.messages.indexOf(message)

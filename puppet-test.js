@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 var Promise = require('bluebird')
-var userCount = 5
+var userCount = 6
 
 let lanuchUser = async (username, gamename) => {
   const browser = await puppeteer.launch({

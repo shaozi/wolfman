@@ -11,6 +11,7 @@ export interface WmUser {
   protect: string,
   lastProtect: string,
   hunterKilled: string,
+  hunterCanShoot: boolean,
   lastAttacked: string,
   revealedIdot: boolean,
   isOrganizer: boolean,

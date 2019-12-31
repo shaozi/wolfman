@@ -1,5 +1,22 @@
 <div [ngClass]="{nightbg: isNight, daybg: !isNight}">
 
+  <ng-template #gameOver>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">Game Over</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalRef.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {{endResult}}
+      </div>
+      <div class="modal-footer">
+        <button id="roleready" type="button" class="btn btn-success" (click)="modalRef.hide()">OK!</button>
+      </div>
+    </div>
+  </ng-template>
+
   <ng-template #runSheriffOrNot>
     <div class="modal-content">
       <div class="modal-header">
@@ -100,6 +117,45 @@
     </div>
   </ng-template>
 
+  <ng-template #revengeOrNot>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">猎人开枪</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendReady()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        你死了要开枪带走谁吗？
+        <div>
+          <button type="button" class="btn btn-outline-primary m-3" *ngFor="let user of game.users"
+            (click)="sendVote(user.name)">
+            {{user.name}}
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">不开枪</button>
+      </div>
+    </div>
+  </ng-template>
+  <ng-template #hunterOk>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">猎人开枪</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="sendReady()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        你不能开枪
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">好吧</button>
+      </div>
+    </div>
+  </ng-template>
+
   <div *ngIf="game">
     <div class="text-center">
       <span>Day {{game.round}}</span>
@@ -115,7 +171,8 @@
       <button type="button" id="test1" class="btn btn-outline-info" (click)="openModal('saveOrNot')">save</button>
       <button type="button" id="test2" class="btn btn-outline-info" (click)="openModal('poisonOrNot')">poison</button>
       <button type="button" id="test3" class="btn btn-outline-info" (click)="openModal('runSheriffOrNot')">run</button>
-      <div class="alert alert-info"> {{user.name}}-{{user.role}} {{currentRound}}-{{currentState}} </div>
+      <button type="button" id="mute" class="btn btn-outline-info" (click)="toggleMute()">Mute</button>
+      <div class="alert alert-info"> {{user.name}}-{{user.role}} {{currentRound}}-{{sio.stateLabel[currentState]}} </div>
     </div>
 
     <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent" class="alert alert-info">

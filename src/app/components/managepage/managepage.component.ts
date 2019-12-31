@@ -63,7 +63,7 @@ export class ManagepageComponent implements OnInit {
       gameType: 'killAll',
       witch: true,
       prophet: true,
-      hunter: false,
+      hunter: true,
       guard: false,
       idiot: false
     })
@@ -162,7 +162,13 @@ export class ManagepageComponent implements OnInit {
     error => this.handleError(error)
     )
   }
-  
+  deleteGame() {
+    this.http.delete('/api/delete').subscribe(res => {
+      this.router.navigate(['/game'])
+    },
+    error => this.handleError(error)
+    )
+  }
   sendChat() {
     if (this.chatMessage == '') {
       return

@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
-import { Howl } from 'howler'
+import { Howl, Howler } from 'howler'
 
 @Injectable({
   providedIn: 'root'
 })
 export class SoundService {
   public backgroundMusic: Howl
-
   public sounds: { [key: string]: Howl } = {}
+  public mute: boolean
+
   public soundNames: Array<string> = [
     'isNight',		  // 天黑了
     'isDay',		    // 天亮了
@@ -26,6 +27,11 @@ export class SoundService {
     'lastword', 		// 请说遗言
     'choose' 		    // 请选择
   ]
+
+  toggleMute() {
+    this.mute = !this.mute
+    Howler.mute(this.mute)
+  }
 
   constructor() {
     this.backgroundMusic = new Howl({
