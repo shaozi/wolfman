@@ -68,7 +68,7 @@
         </button>
       </div>
       <div class="modal-body">
-        {{user.name}}的身份是<strong class="text-danger">{{sio.roleLabel[user.role]}}</strong>!
+        <h3>{{user.name}}的身份是<span class="text-danger">{{sio.roleLabel[user.role]}}</span>!</h3>
       </div>
       <div class="modal-footer">
         <button id="roleready" type="button" class="btn btn-success" (click)="sendStart()">记住啦，开始吧</button>
@@ -85,11 +85,13 @@
         </button>
       </div>
       <div class="modal-body">
-        {{user.lastAttacked}} 被咬了，救吗？
+        <div *ngIf="user.antidote">{{user.lastAttacked}} 被咬了，救吗？</div>
+        <div *ngIf="!user.antidote">没有解药了</div>
       </div>
       <div class="modal-footer">
-        <button id="roleready" type="button" class="btn btn-success" (click)="sendVote(user.lastAttacked)">救</button>
-        <button type="button" class="btn btn-secondary" (click)="sendReady()">不救</button>
+        <button *ngIf="user.antidote" id="roleready" type="button" class="btn btn-success"
+          (click)="sendVote(user.lastAttacked)">救</button>
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">算了</button>
       </div>
     </div>
   </ng-template>
@@ -103,16 +105,21 @@
         </button>
       </div>
       <div class="modal-body">
-        要毒谁吗？
-        <div>
-          <button type="button" class="btn btn-outline-primary m-3" *ngFor="let user of game.users"
-            (click)="sendVote(user.name)">
-            {{user.name}}
-          </button>
+        <div *ngIf="user.poison">
+          <h3>要毒谁吗？</h3>
+          <div>
+            <button type="button" class="btn btn-outline-primary m-3" *ngFor="let user of game.users"
+              (click)="sendVote(user.name)">
+              {{user.name}}
+            </button>
+          </div>
+        </div>
+        <div *ngIf="!user.poison">
+          <h3>没有毒药了</h3>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="sendReady()">不毒</button>
+        <button type="button" class="btn btn-secondary" (click)="sendReady()">算了</button>
       </div>
     </div>
   </ng-template>
@@ -157,25 +164,36 @@
   </ng-template>
 
   <div *ngIf="game">
-    <div class="text-center">
-      <span>Day {{game.round}}</span>
+
+
+    <div *ngIf="user" class="nav my-2 p-0 d-flex justify-content-between align-items-center" [ngClass]="{'text-white': isNight, 'bg-dark': isNight, 'text-dark': !isNight, 'bg-light': !isNight}">
+      <button type="button" id="myrole" class="btn btn-primary nav-item" (click)="openModal('userRole')">我的身份</button>
+      <div class="text-center nav-item">
+        <span *ngIf="isNight">🌜</span>
+        <span *ngIf="!isNight">😎</span>
+        {{game.round}} - {{sio.stateLabel[currentState]}}
+      </div>
+      <div class="nav-item">
+        <button *ngIf="user.isOrganizer" type="button" id="restart" class="btn btn-warning"
+          (click)="restartGame()">Restart</button>
+        <button type="button" id="mute" class="btn btn-info" (click)="toggleMute()">
+          <span *ngIf="mute">🔈</span><span *ngIf="!mute">🔇</span>
+        </button>
+      </div>
+
     </div>
 
-    <div *ngIf="user">
-      <button type="button" id="myrole" class="btn btn-info" (click)="openModal('userRole')">我的身份</button>
-      <span *ngIf="user.alive">😀</span>
-      <span *ngIf="!user.alive">😵</span>
-      <span *ngIf="user.sheriff">🚔</span>
-      <button type="button" id="restart" class="btn btn-warning" (click)="restartGame()">Restart</button>
-      <!--debug-->
-      <button type="button" id="test1" class="btn btn-outline-info" (click)="openModal('saveOrNot')">save</button>
-      <button type="button" id="test2" class="btn btn-outline-info" (click)="openModal('poisonOrNot')">poison</button>
-      <button type="button" id="test3" class="btn btn-outline-info" (click)="openModal('runSheriffOrNot')">run</button>
-      <button type="button" id="mute" class="btn btn-outline-info" (click)="toggleMute()">Mute</button>
-      <div class="alert alert-info"> {{user.name}}-{{user.role}} {{currentRound}}-{{sio.stateLabel[currentState]}} </div>
+    <div class="alert" [ngClass]="{'alert-danger': !user.alive, 'alert-success': user.alive}">
+      {{user.name}} - {{user.role}}
+
+      <span *ngIf="user.alive"> 😀 </span>
+      <span *ngIf="!user.alive"> 😵 </span>
+      <span *ngIf="user.sheriff"> 🚔 </span>
+
+      {{currentRound}}-{{sio.stateLabel[currentState]}}
     </div>
 
-    <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent" class="alert alert-info">
+    <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent" class="alert alert-primary">
       请检查你的身份
     </div>
     <div *ngIf="this.currentState !== 'roleCheck' || this.sio.gameStatus.readySent" class="row m-3">

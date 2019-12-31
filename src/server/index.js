@@ -112,7 +112,6 @@ function userJoinGame(username, gamename, socketId) {
     protect: '',
     lastProtect: '',
     hunterCanShoot: false,
-    hunterKilled: false,
     lastAttacked: '',
     revealedIdiot: false,
     isOrganizer: isOrganizer,
@@ -315,8 +314,8 @@ function restartGame(req, res) {
     user.sheriff = false
     user.protect = ''
     user.lastProtect = ''
-    user.hunterKilled = false
     user.lastAttacked = ''
+    user.hunterCanShoot = false
     user.revealedIdiot = false
   })
   res.json({ success: true })
@@ -380,7 +379,7 @@ function getUsers(game, state) {
         return (game.round === 1 && !user.sheriffRunning) // Sheriff votes only people who aren't running (MUST BE ROUND 1)
       case 'nightStart':
       case 'dayStart':
-        return user.alive // Everyone participates in these events
+        return true // Everyone participates in these events
       case 'sheriffNom':
         return game.round === 1 // Everyone participates in this event on ROUND 1
       case 'hunter':
@@ -503,7 +502,6 @@ function playGame(game) {
             user.alive = true
           } else {
             game.voteKilled = user.name
-            game.lastKilled.push(user.name)
           }
           break
         case 'witchkill': // this happens before death checking so should be in lastKilled and not directly set
@@ -615,10 +613,15 @@ function vote(req, res) {
   console.log(`${req.session.user} in ${req.session.game} vote ${JSON.stringify(vote)}`)
   if (state !== game.roundState) {
     console.log(`${req.session.user} in ${req.session.game} send vote state : ${state} != game state : ${game.roundState}. ignore vote`)
-    res.status(400).json('wrong game state')
+    res.json({success: false, message: 'Wrong game state'})
     return
   }
   // Check Validity based on round
+  if (!vote) {
+    console.log('vote is false')
+    res.json({success: false, message: 'Vote invalid'})
+    return
+  }
   switch (game.roundState) {
     case "guard":
       if (user.lastProtect === vote) {
@@ -629,6 +632,7 @@ function vote(req, res) {
     case "witchsave":
       if (!user.alive) {
         // witch is dead
+        console.log('witch is dead cannot use antidote')
         break
       }
       if (user.lastAttacked === user.name && game.round !== 1) {
@@ -643,9 +647,10 @@ function vote(req, res) {
     case "witchkill": // Kill
       if (!user.alive) {
         // witch is dead
+        console.log('witch is dead cannot use poision')
         break
       }
-      if (vote == user.name) {
+      if (vote === user.name) {
         res.json({ success: false, message: "Can't poison self" })
         return
       }
@@ -654,8 +659,15 @@ function vote(req, res) {
 
   if (!(vote in game.votes)) game.votes[vote] = 0;
   game.votes[vote] += user.sheriff ? 1.5 : 1;
-  if (game.roundState === 'prophet') res.json({ success: true, wolf: findUserInGameByName(vote, req.session.game).role === 'wolf' })
-  else res.json({ success: true })
+  if (game.roundState === 'prophet' && user.role === 'prophet') {
+    if (user.alive) {
+      res.json({ success: true, wolf: findUserInGameByName(vote, req.session.game).role === 'wolf' })
+    } else {
+      res.json({ success: false, message: 'no power' })
+    }
+  } else {
+    res.json({ success: true })
+  }
 }
 
 /** Removes user from waiting list and runs next section if waiting for nobody
@@ -667,7 +679,7 @@ function ready(req, res) {
   var game = findGame(req.session.game)
   if (info.state !== game.roundState) {
     console.log(`${req.session.user} in ${req.session.game} send ready state : ${info.state} != game state : ${game.roundState}. ignore vote`)
-    res.status(400).json('wrong ready state')
+    res.json({success: false, message: 'wrong ready state'})
     return
   }
   game.waiting = game.waiting.filter(u => { return u.name !== req.session.user })
