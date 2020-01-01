@@ -11,7 +11,7 @@ var assert = require('assert')
 var games = {} // each game is a namespaces. a game has a users list
 var socketGameUserMap = {} // socket.id => {socket, game, user}
 
-app.use(core)
+app.use(cors)
 
 var sess = {
   secret: 'wolf man game super weak secret session',
