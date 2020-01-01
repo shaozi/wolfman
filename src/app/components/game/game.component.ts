@@ -286,8 +286,7 @@ export class GameComponent implements OnInit {
 
   sendStart() {
     if (this.modalRef) this.modalRef.hide()
-    if ('roleCheck' === this.currentState &&
-      !this.sio.gameStatus.readySent) {
+    if ('roleCheck' === this.currentState) {
       this.sendReady()
     }
   }
