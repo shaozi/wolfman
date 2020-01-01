@@ -1,5 +1,5 @@
 var app = require('express')();
-var cors = require('cors')
+//var cors = require('cors')
 var http = require('http').createServer(app);
 var session = require('express-session')
 var io = require('socket.io')(http);
@@ -11,7 +11,6 @@ var assert = require('assert')
 var games = {} // each game is a namespaces. a game has a users list
 var socketGameUserMap = {} // socket.id => {socket, game, user}
 
-app.use(cors)
 
 var sess = {
   secret: 'wolf man game super weak secret session',
