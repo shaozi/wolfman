@@ -111,6 +111,7 @@ function userJoinGame(username, gamename, socketId) {
     poison: true,
     antidote: true,
     sheriffRunning: false,
+    quitSheriffRunning: false,
     sheriff: false,
     protect: '',
     lastProtect: '',
@@ -132,11 +133,11 @@ function getGameDetails(gamename) {
   // don't leak more information here
   let game = findGame(gamename)
   if (!game) {
+    console.log(`getGameDetails ${gamename} does not exist`)
     return {}
   }
   return {
     name: game.name,
-    status: game.status,
     users: game.users.map(u => {
       return {
         name: u.name,
@@ -144,6 +145,7 @@ function getGameDetails(gamename) {
         isOrganizer: u.isOrganizer,
         alive: u.alive,
         sheriffRunning: u.sheriffRunning,
+        quitSheriffRunning: u.quitSheriffRunning,
         sheriff: u.sheriff,
         revealedIdiot: u.revealedIdiot
       }
@@ -157,7 +159,7 @@ function getGameDetails(gamename) {
 function findGame(gamename) {
   let game = games[gamename]
   if (!game) {
-    console.error(`Game ${gamename} does not exist`)
+    console.error(`findGame ${gamename} does not exist`)
     return {}
   }
   return game
@@ -557,7 +559,7 @@ function playGame(game) {
   }
 }
 
-function advanceRound(game) {
+function advanceRound(game, wolfSuicide=false) {
   let roundList = [
     'nightStart',
     'guard',
@@ -575,6 +577,12 @@ function advanceRound(game) {
     'hunterKill2',
     'sheriffdeath2'
   ]
+  if (wolfSuicide) {
+    game.round++
+    game.roundState = 'nightStart'
+    console.log(`Wolf Suicide, Game round advanced to round: ${game.round}, state: ${game.roundState}`)
+    return
+  }
   let index = roundList.indexOf(game.roundState) == roundList.length - 1 ? 0 : roundList.indexOf(game.roundState) + 1
   if (index == 0) game.round++
   game.roundState = roundList[index]

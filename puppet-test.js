@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 var Promise = require('bluebird')
-var userCount = 6
+var userCount = 12
 
 let lanuchUser = async (username, gamename) => {
   const browser = await puppeteer.launch({
@@ -9,6 +9,7 @@ let lanuchUser = async (username, gamename) => {
     args: [`--window-size=600,800`]
   });
   const page = await browser.newPage();
+  page.setMaxListeners(100)
   await page.goto('http://localhost:3200');
 
   await page.waitFor('#username');

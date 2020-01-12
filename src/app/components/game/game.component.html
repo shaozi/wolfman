@@ -227,7 +227,15 @@
     </div>
 
     <div *ngIf="messages.length" class="notification-footer">
-      <div *ngFor="let message of messages" class="alert alert-info">{{message}}</div>
+      <div *ngFor="let message of messages" class="alert" 
+      [ngClass]="{'alert-info':message.level == 'info', 'alert-warning': message.level == 'warning', 'alert-danger': message.level == 'danger'}" 
+      @messageInOutTrigger
+      >
+      {{message.message}}
+      <button type="button" class="close pull-right" aria-label="Close" (click)="dismissMessage(message.id)">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
     </div>
 
   </div>

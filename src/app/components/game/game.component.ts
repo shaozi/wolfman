@@ -5,12 +5,30 @@ import { WmGame, WmUser, WmClientReponse, WmServerResponse, WmServerNotify, WmGa
 import { Router } from '@angular/router';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { SoundService } from 'src/app/services/sound.service';
-
+import {
+  trigger,
+  state,
+  style,
+  animate,
+  transition,
+  // ...
+} from '@angular/animations';
 
 @Component({
   selector: 'app-game',
   templateUrl: './game.component.html',
-  styleUrls: ['./game.component.sass']
+  styleUrls: ['./game.component.sass'],
+  animations: [
+    trigger('messageInOutTrigger', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate(1000, style({opacity: 1}))
+      ]),
+      transition(':leave', [
+        animate(1000, style({ opacity: 0 }))
+      ])
+    ])
+  ]
 })
 export class GameComponent implements OnInit {
   public game: WmGame
@@ -23,7 +41,6 @@ export class GameComponent implements OnInit {
   public isNight: boolean = true
   public endResult: string = ''
   private socket
-  private gameStatus: WmGameStatus
 
   private counter = 0
 
@@ -58,7 +75,9 @@ export class GameComponent implements OnInit {
       revengeOrNot: this.revengeOrNot,
       hunterOk: this.hunterOk
     }
-    if (this.counter > 1) throw new Error('double init')
+    this.modalService.onHide.subscribe(()=>{
+      this.sio.updateGameStatus('diaglogInProgress', '')
+    })
     this.user = this.sio.user
     console.log('saved user is ', this.user)
     this.getGameAndUser().then(async () => {
@@ -73,8 +92,7 @@ export class GameComponent implements OnInit {
         this.router.navigate(['/manage'])
       })
       this.socket.on('gameState', async (info: WmServerNotify) => {
-        console.log(`Got socket signal gameState - ${JSON.stringify(info)}. delay 1s`)
-        await this.delay(1000)
+        console.log(`Got socket signal gameState - ${JSON.stringify(info)}`)
         console.log(`process signal ${info.state}`)
         this.sio.gameStatus = { state: info.state }
         this.currentRound = info.round
@@ -106,7 +124,7 @@ export class GameComponent implements OnInit {
               else {
                 this.sendReady()
               }
-            } 
+            }
             break
           case 'hunterKill':
             setTimeout(() => {
@@ -116,7 +134,7 @@ export class GameComponent implements OnInit {
                 else {
                   this.openModal('hunterOk')
                 }
-              } 
+              }
             }, 2000)
             break
 
@@ -158,12 +176,6 @@ export class GameComponent implements OnInit {
   }
   get mute() {
     return this.soundService.mute
-  }
-
-  delay(ms: number) {
-    return new Promise((resolve) => {
-      setTimeout(() => { resolve() }, ms)
-    })
   }
 
   handleError(error) {
@@ -285,16 +297,17 @@ export class GameComponent implements OnInit {
   }
 
   sendStart() {
-    if (this.modalRef) this.modalRef.hide()
-    if ('roleCheck' === this.currentState) {
+    //if (this.modalRef) this.modalRef.hide()
+    //if ('roleCheck' === this.currentState) {
       this.sendReady()
-    }
+    //}
   }
 
   sendReady(username?: string) {
     if (this.modalRef) this.modalRef.hide()
     if (!this.allowVote(username)) {
       console.log('vote is not allowed, dont send ready')
+      this.setAutoDismissMessage('ready not allowed to be sent', { level: 'danger', timeout: 10000 })
       return
     }
     // FIXME: status update need to be atomic
@@ -304,64 +317,69 @@ export class GameComponent implements OnInit {
       .subscribe((result: WmServerResponse) => {
         if (!result.success) {
           console.log(result)
+          this.setAutoDismissMessage(result.message, { level: 'danger', timeout: 10000 })
         } else {
-
+          this.setAutoDismissMessage('OK')
         }
       },
         error => {
           console.log(error)
-          window.alert(error.message)
+          this.setAutoDismissMessage('send ready error: ' + error.message, { level: 'danger', timeout: 10000 })
         })
   }
 
   allowVote(username?: string) {
-    let allow = (
-      (
-        this.currentState == 'dayStart'
-        ||
-        this.user.alive && (
-          this.currentState === 'killVote'
-          || this.currentState === 'nightStart'
-          || this.currentState === 'roleCheck'
-          || this.currentState.includes(this.user.role)
-        )
-      )
-      ||
-      (
-        this.currentState.includes(this.user.role)
-        && this.user.role !== 'wolf'
-      )
-      || (
-        this.currentState === 'sheriffNom'
-        || this.currentState === 'sheriffVote' && !this.user.sheriffRunning
-      )
-      || (
-        (this.currentState === 'sheriffdeath' || this.currentState === 'sheriffdeath2')
-        && (this.user.sheriff && !this.game.users.find(u => {return u.name === username}).sheriff)
-        )
-    )
-    if (this.sio.gameStatus.state === this.currentState &&
-      this.sio.gameStatus.readySent) {
-      allow = false
-    }
-    if (allow && this.currentState === 'sheriffVote') {
-      let user = this.game.users.find(u => { return u.name === username })
-      if (!user || !user.sheriffRunning) { // only allow select running user
+    let user = this.user
+    //let selectedUser = this.game.users.find(u => { return u.name === username })
+    let state = this.currentState
+    let allow = false
+    switch (state) {
+      case 'roleCheck':
+      case 'dayStart':
+      case 'nightStart':
+      case 'sheriffNom':
+        allow = true
+        break
+      case 'sheriffQuit':
+        allow = user.sheriffRunning
+        break
+      case 'sheriffVote':
+        allow = !user.sheriffRunning && !user.quitSheriffRunning
+        break
+      case 'killVote':
+        allow = user.alive
+        break
+      case 'witch':
+      case 'witchsave':
+      case 'witchkill':
+      case 'prophet':
+      case 'hunter':
+      case 'hunterKill':
+      case 'hunterKill2':
+      case 'guard':
+        allow = state.includes(user.role)
+        break
+      case 'wolf':
+        allow = user.alive && user.role === 'wolf'
+        break
+      case 'sheriffdeath':
+      case 'sheriffdeath2':
+        allow = user.sheriff
+        break
+
+      default:
         allow = false
-      }
+        break
     }
-    console.log('allowVote check username: ', username, this.user, this.currentState, this.sio.gameStatus, allow)
+    console.log('allowVote check username: ', username, user, state, allow)
     return allow
   }
 
   sendVote(username: string) {
 
     let allow = this.allowVote(username)
-    if (this.currentState == 'roleCheck') {
-      allow == false
-    }
     if (!allow) {
-      this.setAutoDismissMessage('选择无效')
+      this.setAutoDismissMessage('选择无效', { level: 'danger', timeout: 10000 })
       return
     }
     if (this.modalRef) {
@@ -371,7 +389,7 @@ export class GameComponent implements OnInit {
     this.http.post('/api/vote/', data)
       .subscribe((result: WmServerResponse) => {
         if (!result.success) {
-          this.setAutoDismissMessage(`你选了${username}，但是有错：${result.message}`)
+          this.setAutoDismissMessage(`你选了${username}，但是有错：${result.message}`, { level: 'danger' })
         } else {
           if ('wolf' in result) {
             this.setAutoDismissMessage(`${username}的身份是个${result.wolf ? '狼人' : '平民'}!!`)
@@ -390,19 +408,30 @@ export class GameComponent implements OnInit {
       },
         error => {
           console.log(error)
-          window.alert(error.message)
+          this.setAutoDismissMessage(`sendVote error: {JSON.stringify(error)}`, {level: 'danger', timeout: 20000})
         })
   }
 
-  setAutoDismissMessage(message: string, timeout?: number) {
-    timeout = timeout || 2000
-    this.messages.push(message)
+  setAutoDismissMessage(message: string, opt?: { level?: string, timeout?: number }) {
+    let id = Math.floor(Math.random() * 1000000)
+    let timeout = 2000
+    if (opt && opt.timeout) {
+      timeout = opt.timeout
+    }
+    let level = 'info'
+    if (opt && opt.level) {
+      level = opt.level
+    }
+    this.messages.push({ id: id, message: message, level: level, timeout: timeout })
     setTimeout(() => {
-      let index = this.messages.indexOf(message)
-      if (index != -1) {
-        this.messages.splice(index, 1)
-      }
+      this.dismissMessage(id)
     }, timeout)
+  }
+  dismissMessage(id: number) {
+    let index = this.messages.findIndex(m => { return m.id === id })
+    if (index != -1) {
+      this.messages.splice(index, 1)
+    }
   }
 
   openModal(name: string) {
