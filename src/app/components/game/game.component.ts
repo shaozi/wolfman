@@ -40,6 +40,10 @@ export class GameComponent implements OnInit {
   public messages = []
   public isNight: boolean = true
   public endResult: string = ''
+  public actionButtons = [
+    {name: "Show my role"},
+    {name: "Quit game"}
+  ]
   private socket
 
   private counter = 0
@@ -85,6 +89,10 @@ export class GameComponent implements OnInit {
       this.socket = this.sio.socket
       this.socket.on('restart', () => {
         this.router.navigate(['/manage'])
+      })
+      this.socket.on('refresh', () => {
+        console.log('get refresh signal from server')
+        this.getGameAndUser()
       })
       this.socket.on('gameOver', async (info: { winState: number }) => {
         this.endResult = `Game Over! ${info.winState === 1 ? '狼人赢了！' : '村民赢了！'}`

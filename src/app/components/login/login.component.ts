@@ -10,6 +10,11 @@ import { Router } from '@angular/router';
 })
 export class LoginComponent implements OnInit {
   
+  public actionButtons = [
+    {name: "Show my role", style: 'info'},
+    {name: "Quit game", style: 'danger'},
+    {name: "Start game", style: ''}
+  ]
   public username: string
 
   constructor(private http: HttpClient, private router: Router) { }
@@ -46,4 +51,7 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  onClicked(name: string) {
+    console.log(`${name} is clicked`)
+  }
 }

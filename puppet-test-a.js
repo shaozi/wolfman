@@ -9,7 +9,7 @@ let lanuchUser = async (username, gamename) => {
     args: [`--window-size=600,800`]
   });
   const page = await browser.newPage();
-  await page.goto('http://192.168.3.3');
+  await page.goto('https://jingshao.float-zone.com');
 
   await page.waitFor('#username');
   await page.type('#username', username)

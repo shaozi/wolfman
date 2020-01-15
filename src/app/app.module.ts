@@ -14,6 +14,7 @@ import { ModalModule } from 'ngx-bootstrap/modal';
 import { ButtonsModule } from 'ngx-bootstrap/buttons';
 import { ReactiveFormsModule } from '@angular/forms';
 import { AlertModule } from 'ngx-bootstrap/alert';
+import { ActionMenuComponent } from './components/action-menu/action-menu.component';
 
 
 
@@ -23,7 +24,8 @@ import { AlertModule } from 'ngx-bootstrap/alert';
     LoginComponent,
     CreateorjoinComponent,
     ManagepageComponent,
-    GameComponent
+    GameComponent,
+    ActionMenuComponent
   ],
   imports: [
     BrowserModule,

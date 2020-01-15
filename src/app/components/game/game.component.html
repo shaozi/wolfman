@@ -85,13 +85,14 @@
         </button>
       </div>
       <div class="modal-body">
-        <div *ngIf="user.antidote && user.alive && user.name !== user.lastAttacked">{{user.lastAttacked}} 被咬了，救吗？(Use antidote?)</div>
+        <div *ngIf="user.antidote && user.alive && user.name !== user.lastAttacked">{{user.lastAttacked}} 被咬了，救吗？(Use
+          antidote?)</div>
         <div *ngIf="!user.antidote">没有解药了(No more antidote)</div>
-        <div *ngIf="user.name === user.lastAttacked">不能救自己(Cannot save self)</div> 
+        <div *ngIf="user.name === user.lastAttacked">不能救自己(Cannot save self)</div>
       </div>
       <div class="modal-footer">
-        <button *ngIf="user.antidote && user.alive && user.name !== user.lastAttacked" id="roleready" type="button" class="btn btn-success"
-          (click)="sendVote(user.lastAttacked)">救(Save)
+        <button *ngIf="user.antidote && user.alive && user.name !== user.lastAttacked" id="roleready" type="button"
+          class="btn btn-success" (click)="sendVote(user.lastAttacked)">救(Save)
         </button>
         <button type="button" class="btn btn-secondary" (click)="sendReady()">算了(Forget it)</button>
       </div>
@@ -111,9 +112,7 @@
           <h3>要毒谁吗？(Poison?)</h3>
           <div>
             <button type="button" class="btn btn-outline-primary m-3" *ngFor="let u of game.users"
-              (click)="sendVote(u.name)"
-              [disabled]="!u.alive || u.name == user.name"
-              >
+              (click)="sendVote(u.name)" [disabled]="!u.alive || u.name == user.name">
               {{u.name}}
             </button>
           </div>
@@ -140,8 +139,7 @@
         你死了要开枪带走谁吗？(You are dead. Do you want to kill someone?)
         <div>
           <button type="button" class="btn btn-outline-primary m-3" *ngFor="let u of game.users"
-            (click)="sendVote(u.name)"
-            [disabled]="!u.alive || u.name == user.name">
+            (click)="sendVote(u.name)" [disabled]="!u.alive || u.name == user.name">
             {{u.name}}
           </button>
         </div>
@@ -171,7 +169,8 @@
   <div *ngIf="game">
 
 
-    <div *ngIf="user" class="nav my-2 p-0 d-flex justify-content-between align-items-center" [ngClass]="{'text-white': isNight, 'bg-dark': isNight, 'text-dark': !isNight, 'bg-light': !isNight}">
+    <div *ngIf="user" class="nav my-2 p-0 d-flex justify-content-between align-items-center"
+      [ngClass]="{'text-white': isNight, 'bg-dark': isNight, 'text-dark': !isNight, 'bg-light': !isNight}">
       <button type="button" id="myrole" class="btn btn-primary nav-item" (click)="openModal('userRole')">我的身份</button>
       <div class="text-center nav-item">
         <span *ngIf="isNight">🌜</span>
@@ -198,8 +197,9 @@
       {{currentRound}}-{{sio.stateLabel[currentState]}}
     </div>
 
-    <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent" class="alert alert-primary">
-      👆请检查你的身份 Please check your role
+    <div *ngIf="this.currentState == 'roleCheck' && !this.sio.gameStatus.readySent" class="alert alert-primary"
+      (click)="openModal('userRole')">
+      请检查你的身份 Please check your role
     </div>
     <div *ngIf="this.currentState !== 'roleCheck' || this.sio.gameStatus.readySent" class="row m-3">
       <div class="col-6 p-1" *ngFor="let user of game.users" (click)="sendVote(user.name)">
@@ -227,17 +227,19 @@
     </div>
 
     <div *ngIf="messages.length" class="notification-footer">
-      <div *ngFor="let message of messages" class="alert" 
-      [ngClass]="{'alert-info':message.level == 'info', 'alert-warning': message.level == 'warning', 'alert-danger': message.level == 'danger'}" 
-      @messageInOutTrigger
-      >
-      {{message.message}}
-      <button type="button" class="close pull-right" aria-label="Close" (click)="dismissMessage(message.id)">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
+      <div *ngFor="let message of messages" class="alert"
+        [ngClass]="{'alert-info':message.level == 'info', 'alert-warning': message.level == 'warning', 'alert-danger': message.level == 'danger'}"
+        @messageInOutTrigger>
+        {{message.message}}
+        <button type="button" class="close pull-right" aria-label="Close" (click)="dismissMessage(message.id)">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
     </div>
 
+    <app-action-menu [actions]="actionButtons">
+
+    </app-action-menu>
   </div>
 
 </div>

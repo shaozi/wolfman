@@ -6,4 +6,9 @@
       <button id="next" type="button" class="btn btn-success btn-block mt-1" [disabled]="!username" (click)="next()">Next</button>
     </div>
   </div>
+  <app-action-menu
+  [actions]="actionButtons"
+  (clicked)="onClicked($event)"
+  ></app-action-menu>
+
 </div>

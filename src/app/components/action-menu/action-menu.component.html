@@ -1,0 +1,12 @@
+<div class="action-menu rounded"
+[@menuInOutTrigger]="isHidden? 'out':'in'">
+<button type="button" class="btn btn-block btn-primary" (click)="isHidden = !isHidden">
+  <span *ngIf="isHidden">Show</span>
+  <span *ngIf="!isHidden">Hide</span> 
+</button>
+
+  <button type="button" class="btn btn-block" [ngClass]="'btn-' + (action.style || 'primary')"
+    *ngFor="let action of actions" (click)="select(action.name)" (disabled)="action.disabled">
+    {{action.name}}
+  </button>
+</div>

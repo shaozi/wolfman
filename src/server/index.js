@@ -48,6 +48,8 @@ io.on('connection', function (socket) {
       console.log(`${user.name} relogged in ${game.name}`)
       socket.join(game.name)
       socketGameUserMap[socket.id] = { game: game.name, user: user.name }
+      console.log(`${username} socket connected, send refresh signal`)
+      socket.emit('refresh', null)
     }
   } catch (error) {
     console.log(error.message)
